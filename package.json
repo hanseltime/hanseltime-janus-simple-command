@@ -2,14 +2,26 @@
   "name": "janus-simple-command",
   "version": "0.1.0",
   "description": "Janus Simple Command Protocol Client ",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "Justin Hanselman <hanseltime@gmail.com>",
   "license": "MIT",
   "private": true,
+  "publishConfig": {
+    "registry": "tbd",
+    "tag": "latest"
+  },
   "scripts": {
-    "lint": "eslint ./src"
+    "lint": "eslint ./src",
+    "release": "semantic-release"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JanusHealthInc/janus-simple-command.git"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/npm": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "eslint": "^8.26.0",
