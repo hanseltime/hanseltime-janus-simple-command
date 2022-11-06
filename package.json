@@ -1,6 +1,6 @@
 {
   "name": "janus-simple-command",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Janus Simple Command Protocol Client ",
   "main": "dist/index.js",
   "author": "Justin Hanselman <hanseltime@gmail.com>",
