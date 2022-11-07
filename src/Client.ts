@@ -121,49 +121,61 @@ class Client<
     payload: CMap[C]['data'] | SenderCreateCommand<any>['data'],
     senderId?: string,
   ): Promise<SMap[C]> {
-    const commandRespond = new Promise<SMap[C]>(async (res, rej) => {
-      let sendMsgReturn: SendMessageReturn
-      const txn = this.txnStore.create({
-        onAck: async () => {
-          sendMsgReturn?.stopRetry()
-        },
-        onNack: async () => {
-          sendMsgReturn?.stopRetry()
-          rej('NACK recieved')
-        },
-        onStatus: async (msg: SMap[C]) => {
-          // send an ack
-          const ack: ACKMessage = {
-            ack: command,
-            txn,
-            for: msg.for,
-          }
-          await this.sendMsgWithNoRetry(JSON.stringify(ack))
-          res(msg)
-        },
-      })
+    let sendMsgReturn: SendMessageReturn | null = null
 
-      let cmdMessage: CMap[C] | SenderCreateCommand<any>
-      if (command === 'senderCreate') {
-        cmdMessage = {
-          command: 'senderCreate',
+    const txnSetup = new Promise<{
+      txn: string
+      commandRespond: Promise<SMap[C]>
+    }>((txnRes) => {
+      const commandRespond = new Promise<SMap[C]>((res, rej) => {
+        const txn = this.txnStore.create({
+          onAck: async () => {
+            sendMsgReturn?.stopRetry()
+          },
+          onNack: async () => {
+            sendMsgReturn?.stopRetry()
+            rej('NACK recieved')
+          },
+          onStatus: async (msg: SMap[C]) => {
+            // send an ack
+            const ack: ACKMessage = {
+              ack: command,
+              txn,
+              for: msg.for,
+            }
+            await this.sendMsgWithNoRetry(JSON.stringify(ack))
+            res(msg)
+          },
+        })
+        txnRes({
+          commandRespond,
           txn,
-          data: payload,
-        } as SenderCreateCommand<any>
-      } else {
-        cmdMessage = {
-          for: senderId!,
-          command: command,
-          txn,
-          data: payload,
-        } as unknown as CMap[C]
-      }
-
-      sendMsgReturn = await this.sendWithRetry(JSON.stringify(cmdMessage), {
-        onTimeout: async () => {
-          this.txnStore.remove(txn)
-        },
+        })
       })
+    })
+
+    const { txn, commandRespond } = await txnSetup
+
+    let cmdMessage: CMap[C] | SenderCreateCommand<any>
+    if (command === 'senderCreate') {
+      cmdMessage = {
+        command: 'senderCreate',
+        txn,
+        data: payload,
+      } as SenderCreateCommand<any>
+    } else {
+      cmdMessage = {
+        for: senderId!,
+        command: command,
+        txn,
+        data: payload,
+      } as unknown as CMap[C]
+    }
+
+    sendMsgReturn = await this.sendWithRetry(JSON.stringify(cmdMessage), {
+      onTimeout: async () => {
+        this.txnStore.remove(txn)
+      },
     })
 
     return await commandRespond

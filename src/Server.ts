@@ -93,7 +93,7 @@ class Server<
             await this.sendMsgWithNoRetry(JSON.stringify(nack))
           }
           // Log it regardless for the sake of monitoring
-          console.error(`Did not supply senderId for txn: ${msgObj.txn}`)
+          this.debug(`Did not supply senderId for txn: ${msgObj.txn}`)
           return
         }
         await this.handleSenderCreateMessage(msgObj as SenderCreateCommand<any>)
@@ -141,7 +141,7 @@ class Server<
       }
 
       // Log the transaction
-      let sendMessageReturn: SendMessageReturn
+      let sendMessageReturn: SendMessageReturn | null = null
       txnManager.start(txn, {
         onAck: async () => {
           sendMessageReturn?.stopRetry()
@@ -226,7 +226,7 @@ class Server<
     const txnManager = new ReceiverTxnManager()
     this.senderTxnManagers.set(senderId, txnManager)
 
-    let sendMsgReturn: SendMessageReturn
+    let sendMsgReturn: SendMessageReturn | null = null
     this.createCmdTxnManager.start(msg.txn, {
       onAck: async () => {
         sendMsgReturn?.stopRetry()
@@ -247,7 +247,7 @@ class Server<
 
     sendMsgReturn = await this.sendWithRetry(JSON.stringify(statusMsg), {
       onTimeout: async () => {
-        console.log(`Did not recieve client acknowledge for sender (${senderId}), closing sender`)
+        this.debug(`Did not recieve client acknowledge for sender (${senderId}), closing sender`)
         this.createCmdTxnManager.remove(msg.txn)
         this.senderTxnManagers.delete(senderId)
       },

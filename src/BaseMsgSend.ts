@@ -12,17 +12,20 @@ export interface BaseMsgSendOptions {
   ackRetryDelay: number // Milliseconds to wait to retry an non-ack'd send
   maxAckRetries: number // The number of retries we will do if we don't get an ACK
   connection: Connection
+  debug: (msg: string) => void // Debugging interface for you to determine
 }
 
 export class BaseMsgSend {
   readonly ackRetryDelay: number
   readonly maxAckRetries: number
   protected connection: Connection
+  protected debug: (msg: string) => void
 
   constructor(options: BaseMsgSendOptions) {
     this.ackRetryDelay = options.ackRetryDelay
     this.maxAckRetries = options.maxAckRetries
     this.connection = options.connection
+    this.debug = options.debug
   }
 
   /**
@@ -49,7 +52,7 @@ export class BaseMsgSend {
       retry++
       if (retry > this.maxAckRetries) {
         clearInterval(timer)
-        console.warn('No ACK recieved')
+        this.debug('No ACK recieved')
         await options?.onTimeout?.()
         return
       }
