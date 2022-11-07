@@ -33,7 +33,8 @@ export class BaseMsgSend {
    * @returns
    */
   protected async sendWithRetry(msg: string, options: SendWithRetryOptions): Promise<SendMessageReturn> {
-    let timer: number
+    // eslint-disable-next-line prefer-const
+    let timer: NodeJS.Timer
     const ret = {
       stopRetry: () => {
         if (timer) {
