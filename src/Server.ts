@@ -45,7 +45,7 @@ interface HandlerConfig<Commands extends string, CMap extends CommandMap<Command
   maxTimeout: number
 }
 
-class Server<
+export class Server<
   Commands extends string,
   CMap extends CommandMap<Commands>,
   SMap extends StatusMap<Commands>,

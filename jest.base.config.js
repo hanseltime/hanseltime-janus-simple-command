@@ -19,4 +19,8 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   reporters: ['default', ...additionalReporters],
+  transform: {
+    '\\.tsx?$': 'ts-jest',
+    '\\.jsx?$': 'babel-jest',
+  },
 }

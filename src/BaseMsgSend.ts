@@ -21,6 +21,8 @@ export class BaseMsgSend {
   protected connection: Connection
   protected debug: (msg: string) => void
 
+  private promises = new Set<Promise<any>>()
+
   constructor(options: BaseMsgSendOptions) {
     this.ackRetryDelay = options.ackRetryDelay
     this.maxAckRetries = options.maxAckRetries
@@ -53,11 +55,19 @@ export class BaseMsgSend {
       if (retry > this.maxAckRetries) {
         clearInterval(timer)
         this.debug('No ACK recieved')
-        await options?.onTimeout?.()
+        const timeoutPromise = options?.onTimeout?.()
+        if (timeoutPromise) {
+          this.promises.add(timeoutPromise)
+          await timeoutPromise
+          this.promises.delete(timeoutPromise)
+        }
         return
       }
       // TODO: actually store this an an awaitable for draining
-      await this.connection.sendMessage(msg)
+      const promise = this.connection.sendMessage(msg)
+      this.promises.add(promise)
+      await promise
+      this.promises.delete(promise)
     }, this.ackRetryDelay)
 
     return ret
@@ -73,6 +83,7 @@ export class BaseMsgSend {
   }
 
   async close(): Promise<void> {
-    return this.connection.close()
+    await this.connection.close()
+    await Promise.allSettled(this.promises)
   }
 }

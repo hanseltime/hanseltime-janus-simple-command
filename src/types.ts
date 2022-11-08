@@ -14,7 +14,7 @@ export interface Connection {
   onMessage(messageHandler: (msg: string) => Promise<void>): void
 
   // Triggered any time that an error on the connection occurs
-  onError(messageHandler: (msg: string) => void): void
+  onError(errorHandler: (error: Error) => Promise<void>): void
 
   // Closes the connection
   close(): Promise<void>

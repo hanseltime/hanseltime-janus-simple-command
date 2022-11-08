@@ -1,7 +1,9 @@
+import { FailStatusMessage, SuccessStatusMessage } from "../messagesTypes"
+
 export type SenderTxnListener = {
   onAck: () => Promise<void>
   onNack: () => Promise<void>
-  onStatus: (msg: any) => Promise<void>
+  onStatus: (msg: FailStatusMessage | SuccessStatusMessage<any>) => Promise<void>
 }
 
 export type RecieverTxnListener = {
@@ -50,5 +52,22 @@ export class BaseTxnManager<TxnListener extends RecieverTxnListener | SenderTxnL
    */
   clear() {
     this.txnMap.clear()
+  }
+
+  /**
+   * Returns if the txnManager has a txn currently in place for the id
+   * @param txn
+   */
+  has(txn: string): boolean {
+    return this.txnMap.has(txn)
+  }
+
+  /**
+   * Returns the number of txns currently being managed
+   *
+   * @returns
+   */
+  count(): number {
+    return this.txnMap.size
   }
 }

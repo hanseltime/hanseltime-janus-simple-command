@@ -39,6 +39,10 @@ export interface FailStatusMessage<ErrorTypes = never> {
   }
 }
 
+export type StatusMessage<SuccessPayload, ErrorType = never> =
+  | SuccessStatusMessage<SuccessPayload>
+  | FailStatusMessage<ErrorType>
+
 // Common Command Messages
 
 export interface SenderCreateCommand<AuthPayload> {
