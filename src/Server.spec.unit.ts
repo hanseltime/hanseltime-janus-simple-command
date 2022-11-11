@@ -37,6 +37,8 @@ type StatusMap = {
   }>
 }
 
+const mockDebug = jest.fn()
+
 describe('Server', () => {
   let mockGenerator: () => string
   beforeEach(() => {
@@ -51,7 +53,7 @@ describe('Server', () => {
       ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
       maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
       connection,
-      debug: jest.fn().mockImplementation((...args) => console.log(...args)),
+      debug: mockDebug,
       maxSenderInactivity: 4000,
       idGenerator: mockGenerator,
     })
@@ -92,7 +94,7 @@ describe('Server', () => {
       ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
       maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
       connection,
-      debug: jest.fn().mockImplementation((...args) => console.log(...args)),
+      debug: mockDebug,
       maxSenderInactivity: 4000,
       idGenerator: mockGenerator,
     })
@@ -141,7 +143,7 @@ describe('Server', () => {
       ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
       maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
       connection,
-      debug: jest.fn().mockImplementation((...args) => console.log(...args)),
+      debug: mockDebug,
       maxSenderInactivity: 500,
       idGenerator: mockGenerator,
     })
@@ -185,7 +187,7 @@ describe('Server', () => {
       ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
       maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
       connection,
-      debug: jest.fn().mockImplementation((...args) => console.log(...args)),
+      debug: mockDebug,
       maxSenderInactivity: 500,
       idGenerator: mockGenerator,
     })
@@ -301,7 +303,7 @@ describe('Server', () => {
       ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
       maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
       connection,
-      debug: jest.fn().mockImplementation((...args) => console.log(...args)),
+      debug: mockDebug,
       maxSenderInactivity: 500,
       idGenerator: mockGenerator,
     })
