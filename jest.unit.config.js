@@ -14,4 +14,5 @@ const baseConfig = require('./jest.base.config')
 module.exports = {
   ...baseConfig,
   testMatch: ['**/*.spec.unit.ts'],
+  testTimeout: 70000,
 }

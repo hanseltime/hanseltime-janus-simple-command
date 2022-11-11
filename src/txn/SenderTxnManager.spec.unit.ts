@@ -1,6 +1,6 @@
 import { SenderTxnManager } from './SenderTxnManager'
 import { intGeneratorFactory } from '../idGenerators'
-import { SuccessStatusMessage } from '../messagesTypes'
+import { FailStatusMessage, SuccessStatusMessage } from '../messagesTypes'
 
 jest.mock('../idGenerators')
 const mockIntGeneratorFactory = intGeneratorFactory as jest.Mock
@@ -22,8 +22,11 @@ describe('SenderTxnManager', () => {
         onNack: async () => {
           // handling nack
         },
-        onStatus: async (msg: string) => {
+        onStatus: async (msg: FailStatusMessage<any> | SuccessStatusMessage<any>) => {
           // handling status
+        },
+        onTimeout: async () => {
+          // handling timeout
         },
       }
       const expIdx = idx
@@ -48,8 +51,11 @@ describe('SenderTxnManager', () => {
         onNack: async () => {
           // handling nack
         },
-        onStatus: async (msg: string) => {
+        onStatus: async (msg: FailStatusMessage<any> | SuccessStatusMessage<any>) => {
           // handling status
+        },
+        onTimeout: async () => {
+          // handling timeout
         },
       }
       const txn = txnManager.create(dummyListener)
@@ -71,6 +77,7 @@ describe('SenderTxnManager', () => {
         onAck: onAckMock,
         onNack: jest.fn(),
         onStatus: jest.fn(),
+        onTimeout: jest.fn(),
       })
       expect(txn).toBe(`${expTxn}`)
       // Make a second transaction for testing
@@ -79,6 +86,7 @@ describe('SenderTxnManager', () => {
         onAck: onAckMock2,
         onNack: jest.fn(),
         onStatus: jest.fn(),
+        onTimeout: jest.fn(),
       })
       expect(txn2).toBe(`${expTxn2}`)
 
@@ -97,6 +105,7 @@ describe('SenderTxnManager', () => {
         onAck: jest.fn(),
         onNack: onNackMock,
         onStatus: jest.fn(),
+        onTimeout: jest.fn(),
       })
       expect(txn).toBe(`${expTxn}`)
       // Make a second transaction for testing
@@ -105,6 +114,7 @@ describe('SenderTxnManager', () => {
         onAck: jest.fn(),
         onNack: onNackMock2,
         onStatus: jest.fn(),
+        onTimeout: jest.fn(),
       })
       expect(txn2).toBe(`${expTxn2}`)
 
@@ -124,6 +134,7 @@ describe('SenderTxnManager', () => {
         onAck: jest.fn(),
         onNack: jest.fn(),
         onStatus: onStatusMock,
+        onTimeout: jest.fn(),
       })
       expect(txn).toBe(`${expTxn}`)
       // Make a second transaction for testing
@@ -132,6 +143,7 @@ describe('SenderTxnManager', () => {
         onAck: jest.fn(),
         onNack: jest.fn(),
         onStatus: onStatusMock2,
+        onTimeout: jest.fn(),
       })
       expect(txn2).toBe(`${expTxn2}`)
 
@@ -158,6 +170,7 @@ describe('SenderTxnManager', () => {
         onAck: onAckMock,
         onNack: onNackMock,
         onStatus: onStatusMock,
+        onTimeout: jest.fn(),
       })
       expect(txn).toBe(`${expTxn}`)
 

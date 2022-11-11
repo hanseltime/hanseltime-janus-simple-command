@@ -17,6 +17,7 @@ describe('RecieverTxnManager', () => {
         txnManager.start('txn', {
           onAck: jest.fn(),
           onNack: jest.fn(),
+          onTimeout: jest.fn(),
         }),
       ).toBe(true)
 
@@ -29,12 +30,14 @@ describe('RecieverTxnManager', () => {
         txnManager.start('txn', {
           onAck: jest.fn(),
           onNack: jest.fn(),
+          onTimeout: jest.fn(),
         }),
       ).toBe(true)
       expect(
         txnManager.start('txn', {
           onAck: jest.fn(),
           onNack: jest.fn(),
+          onTimeout: jest.fn(),
         }),
       ).toBe(false)
 
@@ -49,11 +52,13 @@ describe('RecieverTxnManager', () => {
       txnManager.start('txn', {
         onAck: onAckMock,
         onNack: jest.fn(),
+        onTimeout: jest.fn(),
       })
       // Make a second transaction for testing
       txnManager.start('txn2', {
         onAck: onAckMock2,
         onNack: jest.fn(),
+        onTimeout: jest.fn(),
       })
 
       await txnManager.ack('txn2')
@@ -69,11 +74,13 @@ describe('RecieverTxnManager', () => {
       txnManager.start('txn', {
         onAck: jest.fn(),
         onNack: onNackMock,
+        onTimeout: jest.fn(),
       })
       // Make a second transaction for testing
       txnManager.start('txn2', {
         onAck: jest.fn(),
         onNack: onNackMock2,
+        onTimeout: jest.fn(),
       })
 
       await txnManager.nack('txn')
@@ -90,6 +97,7 @@ describe('RecieverTxnManager', () => {
       txnManager.start('txn', {
         onAck: onAckMock,
         onNack: onNackMock,
+        onTimeout: jest.fn(),
       })
 
       txnManager.remove('txn')

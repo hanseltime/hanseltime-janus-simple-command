@@ -1,5 +1,5 @@
 import { CommandMessage, StatusMessage, SuccessStatusMessage } from './messagesTypes'
-import { wait } from './testutils'
+import { wait } from './testing/utils'
 import { Sender } from './Sender'
 
 type Commands = 'cmd1' | 'cmd2'

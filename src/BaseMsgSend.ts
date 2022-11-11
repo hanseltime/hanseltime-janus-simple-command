@@ -20,6 +20,7 @@ export class BaseMsgSend {
   readonly maxAckRetries: number
   protected connection: Connection
   protected debug: (msg: string) => void
+  private timers = new Set<NodeJS.Timer>()
 
   private promises = new Set<Promise<any>>()
 
@@ -40,35 +41,46 @@ export class BaseMsgSend {
   protected async sendWithRetry(msg: string, options: SendWithRetryOptions): Promise<SendMessageReturn> {
     // eslint-disable-next-line prefer-const
     let timer: NodeJS.Timer
+    let noRetry = false
     const ret = {
       stopRetry: () => {
+        noRetry = true
         if (timer) {
           clearInterval(timer)
+          this.timers.delete(timer)
         }
       },
     }
     await this.connection.sendMessage(msg)
     // Schedule retry intervals
     let retry = 0
-    timer = setInterval(async () => {
-      retry++
+    const asyncRetry = async () => {
+      ++retry
       if (retry > this.maxAckRetries) {
         clearInterval(timer)
         this.debug('No ACK recieved')
-        const timeoutPromise = options?.onTimeout?.()
-        if (timeoutPromise) {
-          this.promises.add(timeoutPromise)
-          await timeoutPromise
-          this.promises.delete(timeoutPromise)
-        }
+        await options?.onTimeout?.()
         return
       }
-      // TODO: actually store this an an awaitable for draining
-      const promise = this.connection.sendMessage(msg)
-      this.promises.add(promise)
-      await promise
-      this.promises.delete(promise)
+      try {
+        await this.connection.sendMessage(msg)
+      } catch (err) {
+        this.debug(`Send Message Error: ${err}`)
+      }
+    }
+
+    timer = setInterval(() => {
+      if (noRetry) return
+      let finished = false
+      const promise = asyncRetry().finally(() => {
+        finished = true
+        this.promises.delete(promise)
+      })
+      if (!finished) {
+        this.promises.add(promise)
+      }
     }, this.ackRetryDelay)
+    this.timers.add(timer)
 
     return ret
   }
@@ -83,7 +95,10 @@ export class BaseMsgSend {
   }
 
   async close(): Promise<void> {
+    this.timers.forEach((t) => {
+      clearInterval(t)
+    })
     await this.connection.close()
-    await Promise.allSettled(this.promises)
+    await Promise.allSettled([...this.promises])
   }
 }

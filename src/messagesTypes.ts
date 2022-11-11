@@ -53,6 +53,7 @@ export interface SenderCreateCommand<AuthPayload> {
 
 // The senderCreate doesn't know it's for id yet
 export type SenderCreateAckMessage = Omit<ACKMessage, 'for'>
+export type SenderCreateNackMessage = Omit<NACKMessage, 'for'>
 
 export type SenderCreateStatusMessage =
   | SuccessStatusMessage<{
@@ -78,4 +79,9 @@ export type CommandMap<Commands extends string> = {
 }
 export type StatusMap<Commands extends string> = {
   [key in Commands]: SuccessStatusMessage<any> | FailStatusMessage<any>
+}
+
+export type AuthSchema<Submit, Verify> = {
+  submit?: Submit
+  verify?: Verify
 }

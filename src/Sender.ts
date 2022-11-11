@@ -1,4 +1,4 @@
-import { CommandMap, SenderCloseCommand, SenderCloseStatusMessage, StatusMap } from '../messagesTypes'
+import { CommandMap, SenderCloseCommand, SenderCloseStatusMessage, StatusMap } from './messagesTypes'
 
 /**
  * The sender is a single managed session on a given client connection.
@@ -11,7 +11,7 @@ export class Sender<Commands extends string, CMap extends CommandMap<Commands>, 
   private inactive = false
   private inactivityTimer: NodeJS.Timeout | null = null
   constructor(
-    private id: string,
+    readonly id: string,
     private sendFcn: <C extends Commands>(cmd: C, payload: CMap[C]['data'], senderId: string) => Promise<SMap[C]>,
     private inactivity: number,
     private authVerify: any, // TODO: type constrain this
@@ -21,6 +21,9 @@ export class Sender<Commands extends string, CMap extends CommandMap<Commands>, 
 
   private resetInactivity() {
     if (this.inactivity && this.inactivity > 0) {
+      if (this.inactivityTimer) {
+        clearTimeout(this.inactivityTimer)
+      }
       this.inactivityTimer = setTimeout(() => {
         this.inactive = true
       }, this.inactivity)

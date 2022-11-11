@@ -1,14 +1,16 @@
-import { FailStatusMessage, SuccessStatusMessage } from "../messagesTypes"
+import { FailStatusMessage, SuccessStatusMessage } from '../messagesTypes'
 
 export type SenderTxnListener = {
   onAck: () => Promise<void>
   onNack: () => Promise<void>
-  onStatus: (msg: FailStatusMessage | SuccessStatusMessage<any>) => Promise<void>
+  onStatus: (msg: FailStatusMessage<any> | SuccessStatusMessage<any>) => Promise<void>
+  onTimeout: () => Promise<void>
 }
 
 export type RecieverTxnListener = {
   onAck: () => Promise<void>
   onNack: () => Promise<void>
+  onTimeout: () => Promise<void>
 }
 
 export class BaseTxnManager<TxnListener extends RecieverTxnListener | SenderTxnListener> {
@@ -36,6 +38,13 @@ export class BaseTxnManager<TxnListener extends RecieverTxnListener | SenderTxnL
     if (!txnObj) return
     this.remove(txn)
     return txnObj.onNack()
+  }
+
+  timeout(txn: string) {
+    const txnObj = this.txnMap.get(txn)
+    if (!txnObj) return
+    this.remove(txn)
+    return txnObj.onTimeout()
   }
 
   /**

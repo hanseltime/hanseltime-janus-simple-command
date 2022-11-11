@@ -1,5 +1,6 @@
 import { BaseMsgSend, BaseMsgSendOptions, SendMessageReturn } from './BaseMsgSend'
 import { intGeneratorFactory } from './idGenerators'
+import { InactivityMonitor } from './InactivityMonitor'
 import {
   ACKMessage,
   NACKMessage,
@@ -42,7 +43,7 @@ type ValidCommandHandlers<
 
 interface HandlerConfig<Commands extends string, CMap extends CommandMap<Commands>, SMap extends StatusMap<Commands>> {
   handler: ValidCommandHandlers<Commands, CMap, SMap>
-  maxTimeout: number
+  maxTimeout?: number
 }
 
 export class Server<
@@ -56,24 +57,39 @@ export class Server<
   private maxSenderInactivity: number
 
   private senderTxnManagers = new Map<string, ReceiverTxnManager>()
-  private createCmdTxnManager = new ReceiverTxnManager() // Tracks senderCreate transactions
+  private closing = new Map<string, ReceiverTxnManager>()
   private commandHandlers = new Map<Commands | 'senderCreate' | 'senderClose', HandlerConfig<Commands, CMap, SMap>>()
+  private inactivityMonitor: InactivityMonitor
 
   constructor(options: ServerOptions) {
     super(options)
     this.idGenerator = options.idGenerator ?? intGeneratorFactory()
     this.maxSenderInactivity = options.maxSenderInactivity
+    this.inactivityMonitor = new InactivityMonitor(options.maxSenderInactivity)
 
     this.commandHandlers.set('senderClose', {
       handler: async (msg: SenderCloseCommand<any>): Promise<HandlerReturn<SenderCloseStatusMessage>> => {
         // TODO: auth verification
+        const txnManager = this.senderTxnManagers.get(msg.for)
+        if (!txnManager) {
+          return {
+            isError: true,
+            data: {
+              type: 'unexpected',
+              message: `could not find a relevant connection to close for ${msg.for}`,
+            },
+          }
+        }
         this.senderTxnManagers.delete(msg.for)
+        this.closing.set(msg.for, txnManager) // This allows us to close any retry attempts
+        this.inactivityMonitor.register(`${msg.for}`, () => {
+          this.closing.delete(msg.for)
+        })
         return {
           isError: false,
           data: {},
         }
       },
-      maxTimeout: 3000,
     })
 
     this.connection.onMessage(async (msg) => {
@@ -94,6 +110,7 @@ export class Server<
           }
           // Log it regardless for the sake of monitoring
           this.debug(`Did not supply senderId for txn: ${msgObj.txn}`)
+          this.inactivityMonitor.unregister(msgObj.for)
           return
         }
         await this.handleSenderCreateMessage(msgObj as SenderCreateCommand<any>)
@@ -139,16 +156,29 @@ export class Server<
         await this.sendMsgWithNoRetry(JSON.stringify(nack))
         return
       }
+      // Refresh the sender's inactivity
+      this.inactivityMonitor.refresh(msgObj.for)
 
       // Log the transaction
       let sendMessageReturn: SendMessageReturn | null = null
-      txnManager.start(txn, {
-        onAck: async () => {
-          sendMessageReturn?.stopRetry()
-        },
-        onNack: async () => {
-          sendMessageReturn?.stopRetry()
-        },
+      let earlyAck = false
+      const sendPromise = new Promise<void>((res) => {
+        txnManager.start(txn, {
+          onAck: async () => {
+            earlyAck = true
+            sendMessageReturn?.stopRetry()
+            res()
+          },
+          onNack: async () => {
+            earlyAck = true
+            sendMessageReturn?.stopRetry()
+            res()
+          },
+          onTimeout: async () => {
+            this.debug(`Failed to recieve acknowledgement for status to ${command}`)
+            res()
+          },
+        })
       })
       // ACK as soon as we can
       const ack: ACKMessage = {
@@ -181,9 +211,13 @@ export class Server<
 
       sendMessageReturn = await this.sendWithRetry(JSON.stringify(statusMessage), {
         onTimeout: async () => {
-          await txnManager.remove(txn)
+          await txnManager!.timeout(txn)
         },
       })
+      if (earlyAck) {
+        sendMessageReturn.stopRetry()
+      }
+      await sendPromise
     })
   }
 
@@ -202,7 +236,7 @@ export class Server<
   }
 
   private getTxnManager(senderId: string): ReceiverTxnManager | undefined {
-    return this.senderTxnManagers.get(senderId)
+    return this.senderTxnManagers.get(senderId) ?? this.closing.get(senderId)
   }
 
   private async handleSenderCreateMessage(msg: SenderCreateCommand<any>) {
@@ -217,7 +251,7 @@ export class Server<
     let senderId: string
     let retry = 0
     do {
-      if (retry < Server.maxNumberCollisions) {
+      if (retry > Server.maxNumberCollisions) {
         throw new Error('Too Many Id Collisions')
       }
       senderId = this.idGenerator()
@@ -225,15 +259,33 @@ export class Server<
     } while (this.senderTxnManagers.has(senderId))
     const txnManager = new ReceiverTxnManager()
     this.senderTxnManagers.set(senderId, txnManager)
+    this.inactivityMonitor.register(senderId, () => {
+      this.debug(`deleting due to inactivity ${senderId}`)
+      this.senderTxnManagers.delete(senderId)
+    })
 
     let sendMsgReturn: SendMessageReturn | null = null
-    this.createCmdTxnManager.start(msg.txn, {
-      onAck: async () => {
-        sendMsgReturn?.stopRetry()
-      },
-      onNack: async () => {
-        sendMsgReturn?.stopRetry()
-      },
+    let earlyAck = false
+    const statusPromise = new Promise<void>((res) => {
+      txnManager.start(msg.txn, {
+        onAck: async () => {
+          earlyAck = true
+          sendMsgReturn?.stopRetry()
+          res()
+        },
+        onNack: async () => {
+          earlyAck = true
+          sendMsgReturn?.stopRetry()
+          this.debug('Nack received for status to senderCreate')
+          this.senderTxnManagers.delete(senderId)
+          res()
+        },
+        onTimeout: async () => {
+          this.debug('Failed to recieve acknowledgement for status to senderCreate')
+          this.senderTxnManagers.delete(senderId)
+          res()
+        },
+      })
     })
     // TODO: consume auth payload
     const statusMsg: SenderCreateStatusMessage = {
@@ -248,9 +300,21 @@ export class Server<
     sendMsgReturn = await this.sendWithRetry(JSON.stringify(statusMsg), {
       onTimeout: async () => {
         this.debug(`Did not recieve client acknowledge for sender (${senderId}), closing sender`)
-        this.createCmdTxnManager.remove(msg.txn)
-        this.senderTxnManagers.delete(senderId)
+        await txnManager.timeout(msg.txn)
       },
     })
+    if (earlyAck) {
+      sendMsgReturn.stopRetry()
+    }
+    await statusPromise
+  }
+
+  numberOfSenders(): number {
+    return this.senderTxnManagers.size
+  }
+
+  async close(): Promise<void> {
+    this.inactivityMonitor.close()
+    await super.close()
   }
 }

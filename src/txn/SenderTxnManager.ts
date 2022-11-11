@@ -30,11 +30,7 @@ export class SenderTxnManager extends BaseTxnManager<SenderTxnListener> {
    * @returns a transaction string that can be used with the other methods
    * and is unique to all other non-removed/nacked transaction strings
    */
-  create(actions: {
-    onAck: () => Promise<void>
-    onNack: () => Promise<void>
-    onStatus: (msg: any) => Promise<void>
-  }): string {
+  create(actions: SenderTxnListener): string {
     let txn: string
     let retry = 0
     do {
@@ -56,6 +52,11 @@ export class SenderTxnManager extends BaseTxnManager<SenderTxnListener> {
    * @param msg
    */
   async status(txn: string, msg: any): Promise<void> {
-    await this.txnMap.get(txn)?.onStatus(msg)
+    // Remove the status since we only want to act once
+    const listener = this.txnMap.get(txn)
+    if (listener) {
+      this.txnMap.delete(txn)
+      await listener.onStatus(msg)
+    }
   }
 }

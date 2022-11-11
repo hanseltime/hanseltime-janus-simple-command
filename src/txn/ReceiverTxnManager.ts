@@ -12,7 +12,7 @@ export class ReceiverTxnManager extends BaseTxnManager<RecieverTxnListener> {
    *
    * @returns true if the transaction started or false if there was already a transaction
    */
-  start(txn: string, actions: { onAck: () => Promise<void>; onNack: () => Promise<void> }): boolean {
+  start(txn: string, actions: RecieverTxnListener): boolean {
     if (this.txnMap.has(txn)) {
       return false
     }
