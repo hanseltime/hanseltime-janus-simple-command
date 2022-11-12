@@ -27,10 +27,21 @@ export class Client<
   private txnStore = new SenderTxnManager()
 
   private commands: string[]
+  private registered = false
 
   constructor(options: ClientOptions<Commands>) {
     super(options)
     this.commands = options.commands
+  }
+
+  async open(): Promise<void> {
+    await super.open()
+    this.registerListener()
+  }
+
+  private registerListener() {
+    if (this.registered) return
+    this.registered = true
 
     this.connection.onMessage(async (msg: string) => {
       const m = JSON.parse(msg) as FailStatusMessage | SuccessStatusMessage<any> | ACKMessage | NACKMessage
@@ -81,6 +92,9 @@ export class Client<
     payload: CMap[C]['data'] | SenderCreateCommand<any>['data'],
     senderId?: string,
   ): Promise<SMap[C]> {
+    if (!this.isConnected) {
+      throw Error(`Cannot send command ${command}. Not connected to an active connection!`)
+    }
     let sendMsgReturn: SendMessageReturn | null = null
 
     // Switch for catching nearly synchronous acks

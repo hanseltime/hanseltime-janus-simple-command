@@ -59,6 +59,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -111,6 +112,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -167,6 +169,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -206,6 +209,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -244,6 +248,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -278,6 +283,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -338,6 +344,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {
@@ -377,6 +384,7 @@ describe('Client', () => {
       connection: connection,
       debug: jest.fn(),
     })
+    await client.open()
 
     let idx = 0
     mockGenerator.mockImplementation(() => {

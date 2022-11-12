@@ -16,6 +16,9 @@ export interface Connection {
   // Triggered any time that an error on the connection occurs
   onError(errorHandler: (error: Error) => Promise<void>): void
 
+  // Triggered any time that an error on the connection occurs
+  onClose(closeHandler: () => Promise<void>): void
+
   // Closes the connection
   close(): Promise<void>
 }

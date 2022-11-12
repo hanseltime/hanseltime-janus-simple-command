@@ -13,6 +13,9 @@ export interface BaseMsgSendOptions {
   maxAckRetries: number // The number of retries we will do if we don't get an ACK
   connection: Connection
   debug: (msg: string) => void // Debugging interface for you to determine
+  // Listener for when this closes and whether or not it closed due
+  // to an explicit call or the connection forcing a close
+  onClose?: (explicit: boolean) => Promise<void>
 }
 
 export class BaseMsgSend {
@@ -21,7 +24,9 @@ export class BaseMsgSend {
   protected connection: Connection
   protected debug: (msg: string) => void
   protected isConnected = false
+  protected explicitClose = false
   private timers = new Set<NodeJS.Timer>()
+  private onCloseHandler: (isExplicit: boolean) => Promise<void>
 
   private promises = new Set<Promise<any>>()
 
@@ -30,6 +35,14 @@ export class BaseMsgSend {
     this.maxAckRetries = options.maxAckRetries
     this.connection = options.connection
     this.debug = options.debug
+    this.onCloseHandler = options.onClose!
+    // Handle closing here
+    this.connection.onClose(async () => {
+      if (!this.explicitClose) {
+        this.debug('Connection Forced ShutDown!')
+        await this.innerClose(false)
+      }
+    })
   }
 
   /**
@@ -97,11 +110,19 @@ export class BaseMsgSend {
   }
 
   async close(): Promise<void> {
+    await this.innerClose(true)
+  }
+
+  async innerClose(isExplicit: boolean): Promise<void> {
     this.timers.forEach((t) => {
       clearInterval(t)
     })
-    await this.connection.close()
+    this.explicitClose = isExplicit
+    if (isExplicit) {
+      await this.connection.close()
+    }
     await Promise.allSettled([...this.promises])
     this.isConnected = false
+    await this.onCloseHandler?.(isExplicit)
   }
 }

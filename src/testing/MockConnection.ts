@@ -12,6 +12,7 @@ import { wait } from './utils'
 export class MockConnection implements Connection {
   private messageHandler: ((msg: string) => Promise<void>) | undefined
   private errorHandler: ((error: Error) => Promise<void>) | undefined
+  private closeHandler: (() => Promise<void>) | undefined
 
   private inflightCalls = new Map<string, number>()
   private commandHandlers = new Map<string, (cmd: CommandMessage<string, any>) => Promise<StatusMessage<any, any>>>()
@@ -145,6 +146,9 @@ export class MockConnection implements Connection {
   onError(errorHandler: (error: Error) => Promise<void>): void {
     this.errorHandler = errorHandler
   }
+  onClose(closeHandler: () => Promise<void>): void {
+    this.closeHandler = closeHandler
+  }
 
   async simulateIncomingMessage(msg: string): Promise<void> {
     await this.messageHandler?.(msg)
@@ -152,6 +156,10 @@ export class MockConnection implements Connection {
 
   async simulateError(error: Error): Promise<void> {
     await this.errorHandler?.(error)
+  }
+
+  async simulateclose(): Promise<void> {
+    await this.closeHandler?.()
   }
 
   handleCommand(command: string, handler: (cmd: CommandMessage<string, any>) => Promise<StatusMessage<any, any>>) {
