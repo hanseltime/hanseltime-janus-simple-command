@@ -439,4 +439,93 @@ describe('Server', () => {
 
     await server.close()
   })
+  it('does not execute a command that already has a transaction', async () => {
+    const connection = new MockConnection(2, 100)
+    const server = new Server<Commands, CommandMap, StatusMap>({
+      ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
+      maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
+      connection,
+      debug: mockDebug,
+      maxSenderInactivity: 4000,
+      idGenerator: mockGenerator,
+    })
+
+    const createSender: SenderCreateCommand<Record<string, never>> = {
+      txn: '22',
+      command: 'senderCreate',
+      data: {},
+    }
+    await connection.simulateIncomingMessage(JSON.stringify(createSender))
+
+    const expectedAck: SenderCreateAckMessage = {
+      ack: 'senderCreate',
+      txn: '22',
+      timeout: 3000, // hard-baked
+    }
+    const expectedStatus: SenderCreateStatusMessage = {
+      for: 'sender1',
+      txn: '22',
+      result: 'success',
+      data: {
+        inactivity: 4000,
+      },
+    }
+    expect(connection.sendMessage).toHaveBeenCalledTimes(3)
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(1, JSON.stringify(expectedAck))
+    // expect double send since we didn't get an ack back
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(2, JSON.stringify(expectedStatus))
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(3, JSON.stringify(expectedStatus))
+
+    expect(server.numberOfSenders()).toBe(1)
+
+    connection.sendMessage.mockClear()
+    // Register a cmd Handler
+    server.setMessageHandler('cmd1', {
+      handler: async (msg: CommandMap['cmd1']) => {
+        return {
+          isError: false,
+          data: {
+            product: 'ShamWOW',
+          },
+        }
+      },
+      maxTimeout: 6000,
+    })
+    // Give it a delay
+    const command: CommandMap['cmd1'] = {
+      for: 'sender1',
+      txn: '44',
+      command: 'cmd1',
+      data: {
+        value: 503,
+      },
+    }
+    const sendMsg1 = connection.simulateIncomingMessage(JSON.stringify(command))
+    await wait(50)
+    const sendMsg2 = connection.simulateIncomingMessage(JSON.stringify(command))
+
+    await Promise.allSettled([sendMsg1, sendMsg2])
+
+    const expectedAck3: ACKMessage = {
+      ack: 'cmd1',
+      for: 'sender1',
+      txn: '44',
+      timeout: 6000, // hard-baked
+    }
+    const expectedStatus3: StatusMap['cmd1'] = {
+      for: 'sender1',
+      txn: '44',
+      result: 'success',
+      data: {
+        product: 'ShamWOW',
+      },
+    }
+    expect(connection.sendMessage).toHaveBeenCalledTimes(3)
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(1, JSON.stringify(expectedAck3))
+    // expect double send since we didn't get an ack back
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(2, JSON.stringify(expectedStatus3))
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(3, JSON.stringify(expectedStatus3))
+
+    await server.close()
+  })
 })

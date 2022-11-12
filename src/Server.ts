@@ -22,7 +22,7 @@ export interface ServerOptions extends BaseMsgSendOptions {
   maxSenderInactivity: number // the amount, in milliseconds that a sender can go without sending a command
 }
 
-type HandlerReturn<T extends SuccessStatusMessage<any> | FailStatusMessage<any>> =
+export type HandlerReturn<T extends SuccessStatusMessage<any> | FailStatusMessage<any>> =
   | {
       isError: false
       data: Extract<T, { result: 'success' }>['data']
@@ -144,6 +144,12 @@ export class Server<
 
       const { command } = msgObj as CommandMessage<Commands, any>
 
+      // Drop the message is a transaction has already started
+      if (txnManager.has(txn)) {
+        this.debug(`Duplicate command transaction dropped for ${command}`)
+        return
+      }
+
       const handlerConfig = this.commandHandlers.get(command)
       if (!handlerConfig) {
         // TODO: throw?
@@ -225,7 +231,7 @@ export class Server<
     command: C,
     config: {
       handler: (msg: CMap[C]) => Promise<HandlerReturn<SMap[C]>>
-      maxTimeout: number
+      maxTimeout?: number
     },
   ): void {
     this.commandHandlers.set(command, config as HandlerConfig<Commands, CMap, SMap>)

@@ -78,7 +78,7 @@ export type CommandMap<Commands extends string> = {
   [key in Commands]: CommandMessage<Commands, any>
 }
 export type StatusMap<Commands extends string> = {
-  [key in Commands]: SuccessStatusMessage<any> | FailStatusMessage<any>
+  [key in Commands]: StatusMessage<any, any>
 }
 
 export type AuthSchema<Submit, Verify> = {
