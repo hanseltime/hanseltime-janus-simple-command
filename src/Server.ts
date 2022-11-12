@@ -61,6 +61,8 @@ export class Server<
   private commandHandlers = new Map<Commands | 'senderCreate' | 'senderClose', HandlerConfig<Commands, CMap, SMap>>()
   private inactivityMonitor: InactivityMonitor
 
+  private registered = false
+
   constructor(options: ServerOptions) {
     super(options)
     this.idGenerator = options.idGenerator ?? intGeneratorFactory()
@@ -91,12 +93,21 @@ export class Server<
         }
       },
     })
+  }
 
+  async open(): Promise<void> {
+    await super.open()
+    this.registerConnectionListener()
+  }
+
+  private registerConnectionListener(): void {
+    if (this.registered) return
+    this.registered = true
     this.connection.onMessage(async (msg) => {
       const msgObj = JSON.parse(msg) as CommandMessage<Commands, any> | ACKMessage | NACKMessage
       const txn = msgObj.txn
 
-      // Verify the message has a sender of is creating one
+      // Verify the message has a sender or is creating one
       if (!msgObj.for) {
         if ((msgObj as SenderCreateCommand<any>).command !== 'senderCreate') {
           if ((msgObj as CommandMessage<Commands, any>).command) {
@@ -150,6 +161,7 @@ export class Server<
         return
       }
 
+      // Normal Command-Response flow
       const handlerConfig = this.commandHandlers.get(command)
       if (!handlerConfig) {
         // TODO: throw?

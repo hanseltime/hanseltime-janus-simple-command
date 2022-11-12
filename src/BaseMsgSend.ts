@@ -20,6 +20,7 @@ export class BaseMsgSend {
   readonly maxAckRetries: number
   protected connection: Connection
   protected debug: (msg: string) => void
+  protected isConnected = false
   private timers = new Set<NodeJS.Timer>()
 
   private promises = new Set<Promise<any>>()
@@ -91,7 +92,8 @@ export class BaseMsgSend {
   }
 
   async open(): Promise<void> {
-    return this.connection.open()
+    await this.connection.open()
+    this.isConnected = true
   }
 
   async close(): Promise<void> {
@@ -100,5 +102,6 @@ export class BaseMsgSend {
     })
     await this.connection.close()
     await Promise.allSettled([...this.promises])
+    this.isConnected = false
   }
 }

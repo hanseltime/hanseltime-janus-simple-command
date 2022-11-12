@@ -57,6 +57,7 @@ describe('Server', () => {
       maxSenderInactivity: 4000,
       idGenerator: mockGenerator,
     })
+    await server.open()
 
     const createSender: SenderCreateCommand<Record<string, never>> = {
       txn: '22',
@@ -98,6 +99,7 @@ describe('Server', () => {
       maxSenderInactivity: 4000,
       idGenerator: mockGenerator,
     })
+    await server.open()
 
     const createSender: SenderCreateCommand<Record<string, never>> = {
       txn: '22',
@@ -147,6 +149,7 @@ describe('Server', () => {
       maxSenderInactivity: 500,
       idGenerator: mockGenerator,
     })
+    await server.open()
 
     const createSender: SenderCreateCommand<Record<string, never>> = {
       txn: '22',
@@ -191,6 +194,7 @@ describe('Server', () => {
       maxSenderInactivity: 500,
       idGenerator: mockGenerator,
     })
+    await server.open()
 
     const createSender: SenderCreateCommand<Record<string, never>> = {
       txn: '22',
@@ -307,6 +311,7 @@ describe('Server', () => {
       maxSenderInactivity: 500,
       idGenerator: mockGenerator,
     })
+    await server.open()
 
     const createSender: SenderCreateCommand<Record<string, never>> = {
       txn: '22',
@@ -449,6 +454,7 @@ describe('Server', () => {
       maxSenderInactivity: 4000,
       idGenerator: mockGenerator,
     })
+    await server.open()
 
     const createSender: SenderCreateCommand<Record<string, never>> = {
       txn: '22',
