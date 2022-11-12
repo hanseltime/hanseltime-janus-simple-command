@@ -1,6 +1,6 @@
 {
   "name": "@janushealth/janus-simple-command",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Janus Simple Command Protocol Client ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,11 +13,6 @@
   ],
   "author": "Justin Hanselman <hanseltime@gmail.com>",
   "license": "MIT",
-  "private": true,
-  "publishConfig": {
-    "registry": "tbd",
-    "tag": "latest"
-  },
   "scripts": {
     "lint": "eslint .",
     "unit-test": "jest --config=./jest.unit.config.js",
