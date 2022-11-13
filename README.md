@@ -18,7 +18,7 @@ From the standpoint of this library, you only need to worry yourself with comman
 and the corresponding status payloads that could come back.
 
 ```typescript
-import { CommandMap, CommandMessage, StatusMessage } from '@janushealth/janus-simple-command'
+import { CommandMap, CommandMessage, StatusMessage } from '@hanseltime/janus-simple-command'
 // Strongly type your expected commands
 type Commands = 'fly' | 'eat'
 
