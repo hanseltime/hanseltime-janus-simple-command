@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/JanusHealthInc/janus-simple-command/compare/v1.1.1...v1.2.0) (2022-11-13)
+
+
+### Features
+
+* adding utility methods for message checking ([c17d9f4](https://github.com/JanusHealthInc/janus-simple-command/commit/c17d9f45984b17da51bde71c9aadff96b071527d))
+
 ## [1.1.1](https://github.com/JanusHealthInc/janus-simple-command/compare/v1.1.0...v1.1.1) (2022-11-13)
 
 
