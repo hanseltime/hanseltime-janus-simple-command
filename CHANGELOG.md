@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/JanusHealthInc/janus-simple-command/compare/v1.1.0...v1.1.1) (2022-11-13)
+
+
+### Bug Fixes
+
+* triggering timeout calls on close ([8952389](https://github.com/JanusHealthInc/janus-simple-command/commit/8952389199a2d6d6074cdb56df6b759673b5a2e8))
+
 # [1.1.0](https://github.com/JanusHealthInc/janus-simple-command/compare/v1.0.0...v1.1.0) (2022-11-12)
 
 

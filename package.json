@@ -1,6 +1,6 @@
 {
   "name": "@janushealth/janus-simple-command",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Janus Simple Command Protocol Client ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
