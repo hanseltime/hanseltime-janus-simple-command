@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/hanseltime/hanseltime-janus-simple-command/compare/v1.2.0...v1.2.1) (2022-11-13)
+
+
+### Bug Fixes
+
+* patch bump for public repo ([abb51ed](https://github.com/hanseltime/hanseltime-janus-simple-command/commit/abb51ed586b053f31f1b851425dffcd7d0da4426))
+
 # [1.2.0](https://github.com/JanusHealthInc/janus-simple-command/compare/v1.1.1...v1.2.0) (2022-11-13)
 
 

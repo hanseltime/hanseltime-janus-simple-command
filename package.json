@@ -1,6 +1,6 @@
 {
   "name": "@hanseltime/janus-simple-command",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Initial Public Offering of Janus Simple Command Protocol Client ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
