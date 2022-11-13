@@ -25,7 +25,7 @@ export class BaseMsgSend {
   protected debug: (msg: string) => void
   protected isConnected = false
   protected explicitClose = false
-  private timers = new Set<NodeJS.Timer>()
+  private timers = new Set<() => Promise<void>>()
   private onCloseHandler: (isExplicit: boolean) => Promise<void>
 
   private promises = new Set<Promise<any>>()
@@ -55,13 +55,18 @@ export class BaseMsgSend {
   protected async sendWithRetry(msg: string, options: SendWithRetryOptions): Promise<SendMessageReturn> {
     // eslint-disable-next-line prefer-const
     let timer: NodeJS.Timer
+    const timeOutFcn = async () => {
+      clearInterval(timer)
+      this.debug('No ACK recieved')
+      await options?.onTimeout?.()
+    }
     let noRetry = false
     const ret = {
       stopRetry: () => {
         noRetry = true
         if (timer) {
           clearInterval(timer)
-          this.timers.delete(timer)
+          this.timers.delete(timeOutFcn)
         }
       },
     }
@@ -71,9 +76,7 @@ export class BaseMsgSend {
     const asyncRetry = async () => {
       ++retry
       if (retry > this.maxAckRetries) {
-        clearInterval(timer)
-        this.debug('No ACK recieved')
-        await options?.onTimeout?.()
+        await timeOutFcn()
         return
       }
       try {
@@ -94,7 +97,7 @@ export class BaseMsgSend {
         this.promises.add(promise)
       }
     }, this.ackRetryDelay)
-    this.timers.add(timer)
+    this.timers.add(timeOutFcn)
 
     return ret
   }
@@ -114,9 +117,11 @@ export class BaseMsgSend {
   }
 
   async innerClose(isExplicit: boolean): Promise<void> {
-    this.timers.forEach((t) => {
-      clearInterval(t)
+    const timeouts: Promise<void>[] = []
+    this.timers.forEach((timeoutFcn: () => Promise<void>) => {
+      timeouts.push(timeoutFcn())
     })
+    await Promise.allSettled(timeouts)
     this.explicitClose = isExplicit
     if (isExplicit) {
       await this.connection.close()
