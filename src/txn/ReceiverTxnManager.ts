@@ -20,4 +20,10 @@ export class ReceiverTxnManager extends BaseTxnManager<RecieverTxnListener> {
     this.txnMap.set(txn, actions)
     return true
   }
+
+  // Remove the txn on acknowledge
+  async ack(txn: string): Promise<void> {
+    await super.ack(txn)
+    this.remove(txn)
+  }
 }
