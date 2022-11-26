@@ -223,7 +223,6 @@ export class MockConnection implements Connection {
 
 async function baseAckFcn(msg: StatusMessage<any, any> | IntermediateStatusMessage<any>): Promise<ACKMessage> {
   const cast = msg as IntermediateStatusMessage<any>
-  console.log(`baseAck for: ${JSON.stringify(msg)}`)
   return {
     for: msg.for,
     txn: msg.txn,
