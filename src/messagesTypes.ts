@@ -1,5 +1,6 @@
 export interface ACKMessage {
   ack: string // The Command Name
+  interModifier?: string // a unique modifier for the txn and sender across all intermediate messages sent
   for: string // The Sender Id that sent the command
   txn: string // The txn of the command we are acknowledging
   timeout?: number // The server may opt to return an estimated time to complete after ACK'ing
@@ -7,6 +8,7 @@ export interface ACKMessage {
 
 export interface NACKMessage {
   nack: string // The Command Name
+  interModifier?: string // a unique modifier for the txn and sender across all intermediate messages sent
   for: string // The Sender Id that tried to send it
   txn: string // The txn of the command we are acknowledging
   reason: 'noSender' | 'noCommand' | 'badMessage' // Additional information around the fast fail
@@ -23,6 +25,15 @@ export interface CommandMessage<Command extends string, CommandPayload> {
 export interface SuccessStatusMessage<StatusPayload> {
   for: string // Valid Sender Id from senderCreate command
   result: 'success'
+  txn: string // A unique string for all in-flight
+  data: StatusPayload
+}
+
+// Status Message for sending updates midway through a command
+export interface IntermediateStatusMessage<StatusPayload> {
+  for: string // Valid Sender Id from senderCreate command
+  result: 'intermediate'
+  interModifier: string // a unique modifier for the txn and sender across all intermediate messages sent
   txn: string // A unique string for all in-flight
   data: StatusPayload
 }
@@ -80,6 +91,13 @@ export type CommandMap<Commands extends string> = {
 export type StatusMap<Commands extends string> = {
   [key in Commands]: StatusMessage<any, any>
 }
+export type IntermediateStatusMap<Commands extends string> = {
+  [key in Commands]?: IntermediateStatusMessage<any>
+}
+export type InterMessageFromMap<
+  C extends string,
+  T extends IntermediateStatusMap<C>,
+> = T[C] extends IntermediateStatusMessage<any> ? T[C] : never
 
 export type AuthSchema<Submit, Verify> = {
   submit?: Submit

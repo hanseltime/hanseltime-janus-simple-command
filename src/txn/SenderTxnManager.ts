@@ -1,4 +1,5 @@
 import { intGeneratorFactory } from '../idGenerators'
+import { IntermediateStatusMessage } from '../messagesTypes'
 import { BaseTxnManager, SenderTxnListener } from './BaseTxnManager'
 
 interface SenderTxnManagerOptions {
@@ -13,6 +14,7 @@ export class SenderTxnManager extends BaseTxnManager<SenderTxnListener> {
   static readonly MAX_DUPLICATES = 100
 
   private idGenerator: () => string
+  private txnInterModifiers = new Map<string, Set<string>>()
 
   constructor(options: SenderTxnManagerOptions = {}) {
     super()
@@ -41,6 +43,7 @@ export class SenderTxnManager extends BaseTxnManager<SenderTxnListener> {
       retry++
     } while (this.txnMap.has(txn))
     this.txnMap.set(txn, actions)
+    this.txnInterModifiers.set(txn, new Set())
     return txn
   }
 
@@ -55,8 +58,23 @@ export class SenderTxnManager extends BaseTxnManager<SenderTxnListener> {
     // Remove the status since we only want to act once
     const listener = this.txnMap.get(txn)
     if (listener) {
-      this.txnMap.delete(txn)
+      const interModifier = (msg as IntermediateStatusMessage<any>).interModifier
+
+      if (!interModifier) {
+        this.remove(txn)
+      } else {
+        // filter out duplicate intermediate statuses sent
+        const usedModifiers = this.txnInterModifiers.get(txn)
+        if (usedModifiers?.has(interModifier)) return
+        usedModifiers?.add(interModifier)
+      }
       await listener.onStatus(msg)
     }
+  }
+
+  remove(txn: string): boolean {
+    const del = super.remove(txn)
+    this.txnInterModifiers.delete(txn)
+    return del
   }
 }

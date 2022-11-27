@@ -1,12 +1,12 @@
 # The Protocol
 
-At a high-level, this library executes an RPC-like set of commands and calls.  The library itself
+At a high-level, this library executes an RPC-like set of commands and calls. The library itself
 simply serializes and deserializes to/from string to an agreed upon JSON message format that can be used
 to react (receiver side) or metabolize the outcome (sender side).
 
 ## Command Message Sequence
 
-The following diagram shows the simple call pattern between a Sender and a Reciever (server).  Note that, given
+The following diagram shows the simple call pattern between a Sender and a Reciever (server). Note that, given
 that this protocol expects commands to take time, we are reliant on an early ACK/NACK signals to ensure
 that the command or status itself has been received.
 
@@ -16,10 +16,31 @@ sequenceDiagram
     Sender->>+Sender: Retry N times (No ACK)
     Receiver->>+Sender: ACK/NACK
     Receiver->>Receiver: Command Runs
+    Receiver-->>+Sender: Intermediate Status
+    Receiver->>+Receiver: Retry N times (No ACK)
+    Sender-->>+Receiver: ACK/NACK
     Receiver->>+Sender: Status
     Receiver->>+Receiver: Retry N times (No ACK)
     Sender->>+Receiver: ACK/NACK
 ```
+
+### About Sequence
+
+In the above sequence:
+
+1. The client initiates a command
+
+2. The server sends an ack command to ensure it was recieved
+
+3. The client then waits for the expected response while the server performs the command
+
+4. Optional - The server can send an intermediate Status response for the client
+
+   1.The client will acknowledge its receipt
+
+5. The server then sends a status response back to the client
+
+6. The client acknowledges receipt
 
 ## Command Message Schema
 
@@ -41,6 +62,14 @@ interface SuccessStatusMessage {
   data: SuccessResponse
 }
 
+interface IntermediateStatusMessage<StatusPayload> {
+  for: string // <sender id>
+  result: 'intermediate'
+  txn: string // <matching id from the client>
+  interModifier: string // unique string to all other intermediate messages sent for txn
+  data: StatusPayload
+}
+
 interface FailStatusMessage {
   for: string // <sender id>
   result: 'fail'
@@ -54,13 +83,13 @@ interface FailStatusMessage {
 
 #### About
 
-In this paradigm, a command is a string that is agreed upon by the receiver and the sender.  The payload provided gives extra context for these commands to run.
+In this paradigm, a command is a string that is agreed upon by the receiver and the sender. The payload provided gives extra context for these commands to run.
 
 ##### Txn (Transaction):
 
-The transaction needs to be a per-client unique string that can be used to verify acknowledgements and statuses against particular commands that were sent back.  It also prevents from running things twice (See Logical Flow below).
+The transaction needs to be a per-client unique string that can be used to verify acknowledgements and statuses against particular commands that were sent back. It also prevents from running things twice (See Logical Flow below).
 
-__Txn Rule:__
+**Txn Rule:**
 
 Max 36 characters - enough for uuids, but does not require them
 
@@ -69,9 +98,10 @@ Must be unique across all pending commands for the client
 Txn’s can be recycled after a long enough timeout
 
 ##### Status Message (Command Returns):
-For every command, there should be a status message returned.  The status message should either be a failure or success message with either a data or error field on it for the respective status
 
-__FailStatusMessage:__
+For every command, there should be a status message returned. The status message should either be a failure or success message with either a data or error field on it for the respective status
+
+**FailStatusMessage:**
 
 The result will always be ‘fail’
 
@@ -81,9 +111,21 @@ Suggested convention for unexpected failures is ‘unexpected’
 
 The error object message is a free form field that the client can use to log or display
 
-__SuccessStatusMessage:__
+**SuccessStatusMessage:**
 
 The result will always be ‘success’
+
+The data object will always be present
+
+Empty if there is no pertinent info returned
+
+Otherwise, a defined payload for the command return
+
+**IntermediateStatusMessage:**
+
+The result will always be ‘intermediate’
+
+The interModifier field will contain an identifier that is unique to all intermediate messages sent for the particular txn
 
 The data object will always be present
 
@@ -98,6 +140,7 @@ Otherwise, a defined payload for the command return
   ack: string // <command name> | 'status'
   for: strin // <sender id>
   txn: string // <unique id provided by client>
+  interModifier?: string // unique string to all other intermediate messages sent for txn
   timeout?: number // <server dictated timeout>
 }
 
@@ -106,39 +149,40 @@ Otherwise, a defined payload for the command return
   nack: string // <command name> | 'status'
   for: string // <sender id>
   txn: string // <unique id provided by client>
+  interModifier?: string // unique string to all other intermediate messages sent for txn
   reason: 'noSender' | 'noCommand' | 'badMessage'
 }
 ```
 
 #### About:
 
-ack - indicates the command it’s handling
+- ack - indicates the command it’s handling
 
-txn - is a transaction that was started by the client - it points to a unique id that the client generated
+- txn - is a transaction that was started by the client - it points to a unique id that the client generated
 
-max characters: 36 - enough for uuids, but not required
+  - max characters: 36 - enough for uuids, but not required
 
-timeout - [optional] - used by the server to indicate the full amount of time it believes the command can take
+- interModifier - this is only supplied for intermediate status messages and is used to differentiate between multiple intermediate statuses that were sent for a single transaction when verifying acknowledgement
 
-             Note: a client can choose to log if that timeout is larger than its maximum waiting time and even stop listening
+- timeout - [optional] - used by the server to indicate the full amount of time it believes the command can take
 
- 
+  - Note: a client can choose to log if that timeout is larger than its maximum waiting time and even stop listening
 
 If a command is unknown or the sender does not exist:
 
-We will send a NACK response.  That essentially means we refuse the command outright.
+We will send a NACK response. That essentially means we refuse the command outright.
 
 The reason field can be used to differentiate fast failing responses
 
 ## Sender
 
-In the pattern of this protocol, all things are driven by the “Sender”.  The Receiver is the one that is responding to whatever the Sender drives to it.  Both parties can actually be Senders and Receivers but in regards to a single command:
+In the pattern of this protocol, all things are driven by the “Sender”. The Receiver is the one that is responding to whatever the Sender drives to it. Both parties can actually be Senders and Receivers but in regards to a single command:
 
-  The one who sends the command is the Sender.  The one who executes and responds is the Receiver.
+The one who sends the command is the Sender. The one who executes and responds is the Receiver.
 
 ## One or Multiple Senders
 
-It is up to the Receiver to determine how many senders it allows on a connection.  In this way, if the Receiver expects just 1 sender, it can configure itself to return a ‘tooMany’ failure type.
+It is up to the Receiver to determine how many senders it allows on a connection. In this way, if the Receiver expects just 1 sender, it can configure itself to return a ‘tooMany’ failure type.
 
 Work closely with your expected receiver to determine if you need multiple Senders.
 
@@ -146,7 +190,7 @@ One use case for multiple receivers is for having multiple different authorized 
 
 ## Creating a Sender
 
-In order for __any__ sending to occur, a "senderCreate command must be sent on behalf of the perspective client.
+In order for **any** sending to occur, a "senderCreate command must be sent on behalf of the perspective client.
 
 ### Schemas
 
@@ -180,9 +224,9 @@ interface FailStatusMessage {
 
 #### About
 
-The senderCreate command follows the normal Command Structure for command sending but with a few caveats. 
+The senderCreate command follows the normal Command Structure for command sending but with a few caveats.
 
-__Command:__
+**Command:**
 
 txn - This is a transaction that should be unique for all commands that are out for this connection (see below for restrictions)
 
@@ -190,15 +234,15 @@ data - depending on the agreed upon message authentication, we will need to deci
 
 Difference: there is no “from” sender field on this payload due to there being sender yet
 
-__Status:__
+**Status:**
 
-On success, the normal success message payload will be returned.  It is expected that the client should store the sender_id for all future requests
+On success, the normal success message payload will be returned. It is expected that the client should store the sender_id for all future requests
 
 The payload’s “inactivity” field should provide the allotted amount of time that the sender can avoid sending a command before the server closes the sender
 
 The auth field returned can be an auth verification object for the sender to use
 
-__Failure:__
+**Failure:**
 
 The failure may occur due to:
 
@@ -212,7 +256,7 @@ unexpected - Another unexpected failure has occured
 
 Since we are establishing a set of senders, anyone adherent with this protocol should be endingSenders in order to save on resources
 
-Note: the Receiver is under no obligation to keep a Sender on.  Senders will process NACKs in the event
+Note: the Receiver is under no obligation to keep a Sender on. Senders will process NACKs in the event
 that the Receiver drops them.
 
 ### Schemas
@@ -248,18 +292,18 @@ interface FailStatusMessage {
 
 #### About
 
-The senderClose command should be used to clean up resources for a given sender.  Of course, any receiver should provide a mandated timeout of their own, but in order to be responsible with resources, the sender itself should declare when a sender is closed.
+The senderClose command should be used to clean up resources for a given sender. Of course, any receiver should provide a mandated timeout of their own, but in order to be responsible with resources, the sender itself should declare when a sender is closed.
 
-__data:__
+**data:**
 
 for: is the mandatory sender id
 
-auth: This is something to use if we are concerned about multiplexing on a public connection.  It should be some sort of verification token that pairs with the initial authorization to ensure that someone does not close the sender on the connection
+auth: This is something to use if we are concerned about multiplexing on a public connection. It should be some sort of verification token that pairs with the initial authorization to ensure that someone does not close the sender on the connection
 
-__success:__
+**success:**
 
 Upon success, the senderId should no longer be valid for sending
 
-__fail:__
+**fail:**
 
-fail has no action to take 
+fail has no action to take

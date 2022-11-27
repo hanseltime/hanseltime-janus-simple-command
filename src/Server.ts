@@ -14,6 +14,9 @@ import {
   SuccessStatusMessage,
   FailStatusMessage,
   SenderCreateAckMessage,
+  IntermediateStatusMap,
+  IntermediateStatusMessage,
+  InterMessageFromMap,
 } from './messagesTypes'
 import { ReceiverTxnManager } from './txn/ReceiverTxnManager'
 
@@ -36,13 +39,22 @@ type ValidCommandHandlers<
   Commands extends string,
   CMap extends CommandMap<Commands>,
   SMap extends StatusMap<Commands>,
+  InterMap extends IntermediateStatusMap<Commands>,
 > =
-  | (<C extends Commands>(msg: CMap[C]) => Promise<HandlerReturn<SMap[C]>>)
+  | (<C extends Commands>(
+      msg: CMap[C],
+      sendIntermediateStatus?: (payload: InterMap[C]) => Promise<boolean>,
+    ) => Promise<HandlerReturn<SMap[C]>>)
   | ((msg: SenderCreateCommand<any>) => Promise<HandlerReturn<SenderCreateStatusMessage>>)
   | ((msg: SenderCloseCommand<any>) => Promise<HandlerReturn<SenderCloseStatusMessage>>)
 
-interface HandlerConfig<Commands extends string, CMap extends CommandMap<Commands>, SMap extends StatusMap<Commands>> {
-  handler: ValidCommandHandlers<Commands, CMap, SMap>
+interface HandlerConfig<
+  Commands extends string,
+  CMap extends CommandMap<Commands>,
+  SMap extends StatusMap<Commands>,
+  InterMap extends IntermediateStatusMap<Commands>,
+> {
+  handler: ValidCommandHandlers<Commands, CMap, SMap, InterMap>
   maxTimeout?: number
 }
 
@@ -50,6 +62,7 @@ export class Server<
   Commands extends string,
   CMap extends CommandMap<Commands>,
   SMap extends StatusMap<Commands>,
+  InterMap extends IntermediateStatusMap<Commands> = Record<Commands, never>,
 > extends BaseMsgSend {
   static readonly maxNumberCollisions = 100
 
@@ -58,7 +71,11 @@ export class Server<
 
   private senderTxnManagers = new Map<string, ReceiverTxnManager>()
   private closing = new Map<string, ReceiverTxnManager>()
-  private commandHandlers = new Map<Commands | 'senderCreate' | 'senderClose', HandlerConfig<Commands, CMap, SMap>>()
+  private intermediate = new Map<string, ReceiverTxnManager>()
+  private commandHandlers = new Map<
+    Commands | 'senderCreate' | 'senderClose',
+    HandlerConfig<Commands, CMap, SMap, InterMap>
+  >()
   private inactivityMonitor: InactivityMonitor
 
   private registered = false
@@ -106,6 +123,7 @@ export class Server<
     this.connection.onMessage(async (msg) => {
       const msgObj = JSON.parse(msg) as CommandMessage<Commands, any> | ACKMessage | NACKMessage
       const txn = msgObj.txn
+      const interModifier = (msgObj as ACKMessage | NACKMessage).interModifier
 
       // Verify the message has a sender or is creating one
       if (!msgObj.for) {
@@ -128,7 +146,7 @@ export class Server<
         return
       }
 
-      const txnManager = this.getTxnManager(msgObj.for)
+      const txnManager = this.getTxnManager(msgObj, interModifier)
       if (!txnManager) {
         // There's essentially no sender record
         if ((msgObj as CommandMessage<Commands, any>).command) {
@@ -144,12 +162,12 @@ export class Server<
         return
       }
 
-      // ingest the acknowledge
+      // ingest the acknowledge - We use the intermediate modifier instead of txn for intermediate statuses
       if ((msgObj as ACKMessage).ack) {
-        await txnManager.ack(txn)
+        await txnManager.ack(interModifier ?? txn)
         return
       } else if ((msgObj as NACKMessage).nack) {
-        await txnManager.nack(txn)
+        await txnManager.nack(interModifier ?? txn)
         return
       }
 
@@ -180,20 +198,24 @@ export class Server<
       // Log the transaction
       let sendMessageReturn: SendMessageReturn | null = null
       let earlyAck = false
+      const intermediateKey = `${msgObj.for}-${txn}`
       const sendPromise = new Promise<void>((res) => {
         txnManager.start(txn, {
           onAck: async () => {
             earlyAck = true
             sendMessageReturn?.stopRetry()
+            this.intermediate.delete(intermediateKey)
             res()
           },
           onNack: async () => {
             earlyAck = true
             sendMessageReturn?.stopRetry()
+            this.intermediate.delete(intermediateKey)
             res()
           },
           onTimeout: async () => {
             this.debug(`Failed to recieve acknowledgement for status to ${command}`)
+            this.intermediate.delete(intermediateKey)
             res()
           },
         })
@@ -208,7 +230,12 @@ export class Server<
       await this.sendMsgWithNoRetry(JSON.stringify(ack))
 
       // Use the handler
-      const handlerReturn = await handlerConfig.handler(msgObj as any)
+
+      // We will use Receiver TxnManager with incremented integers to manage the
+      const handlerReturn = await handlerConfig.handler(
+        msgObj as any,
+        this.createIntermediateStatusSender(intermediateKey, msgObj as CommandMessage<Commands, any>),
+      )
 
       let statusMessage: FailStatusMessage<any> | SuccessStatusMessage<any>
       if (handlerReturn.isError) {
@@ -242,19 +269,49 @@ export class Server<
   setMessageHandler<C extends Commands>(
     command: C,
     config: {
+      handler: (
+        msg: CMap[C],
+        sendIntermediateStatus: (payload: InterMessageFromMap<C, InterMap>['data']) => Promise<void>,
+      ) => Promise<HandlerReturn<SMap[C]>>
+      maxTimeout?: number
+    },
+  ): void
+  setMessageHandler<C extends Commands>(
+    command: C,
+    config: {
       handler: (msg: CMap[C]) => Promise<HandlerReturn<SMap[C]>>
       maxTimeout?: number
     },
   ): void {
-    this.commandHandlers.set(command, config as HandlerConfig<Commands, CMap, SMap>)
+    this.commandHandlers.set(command, config as HandlerConfig<Commands, CMap, SMap, InterMap>)
+  }
+
+  setMessageHandlerWithIntermediate<C extends Commands>(
+    command: C,
+    config: {
+      handler: (
+        msg: CMap[C],
+        sendIntermediateStatus: (payload: InterMessageFromMap<C, InterMap>['data']) => Promise<void>,
+      ) => Promise<HandlerReturn<SMap[C]>>
+      maxTimeout?: number
+    },
+  ): void {
+    this.commandHandlers.set(command, config as HandlerConfig<Commands, CMap, SMap, InterMap>)
   }
 
   removeMessageHandler<C extends Commands>(command: C): boolean {
     return this.commandHandlers.delete(command)
   }
 
-  private getTxnManager(senderId: string): ReceiverTxnManager | undefined {
-    return this.senderTxnManagers.get(senderId) ?? this.closing.get(senderId)
+  private getTxnManager(
+    msgObj: CommandMessage<Commands, any> | ACKMessage | NACKMessage,
+    interModifier?: string,
+  ): ReceiverTxnManager | undefined {
+    // Handle intermediate status modifiers differently
+    if (interModifier) {
+      return this.intermediate.get(this.getIntermediateKey(msgObj))
+    }
+    return this.senderTxnManagers.get(msgObj.for) ?? this.closing.get(msgObj.for)
   }
 
   private async handleSenderCreateMessage(msg: SenderCreateCommand<any>) {
@@ -325,6 +382,66 @@ export class Server<
       sendMsgReturn.stopRetry()
     }
     await statusPromise
+  }
+
+  private getIntermediateKey(msgObj: CommandMessage<Commands, any> | ACKMessage | NACKMessage) {
+    return `${msgObj.for}-${msgObj.txn}`
+  }
+
+  private createIntermediateStatusSender(intermediateKey: string, msgObj: CommandMessage<Commands, any>) {
+    let intermediateInt = 0
+    // We will reuse txn logic since we control the intermediateInt for a key
+    this.intermediate.set(intermediateKey, new ReceiverTxnManager())
+
+    return async (interData: any): Promise<boolean> => {
+      const interTxnManager = this.intermediate.get(intermediateKey)
+      if (!interTxnManager) {
+        this.debug(`Error: attempting to send intermediate status on closed txn: ${msgObj.txn}`)
+        return false
+      }
+
+      intermediateInt += 1
+      const intModifier = `${intermediateInt}`
+      let earlyInterAck = false
+      let sendInterStatus: SendMessageReturn | null = null
+      const interSendPromise = new Promise<boolean>((res) => {
+        interTxnManager.start(intModifier, {
+          onAck: async () => {
+            earlyInterAck = true
+            sendInterStatus?.stopRetry()
+            res(true)
+          },
+          onNack: async () => {
+            earlyInterAck = true
+            sendInterStatus?.stopRetry()
+            res(false)
+          },
+          onTimeout: async () => {
+            this.debug(`Failed to recieve acknowledgement for intermediate status to ${msgObj.command}`)
+            res(false)
+          },
+        })
+      })
+
+      sendInterStatus = await this.sendWithRetry(
+        JSON.stringify({
+          for: msgObj.for,
+          txn: msgObj.txn,
+          result: 'intermediate',
+          interModifier: intModifier,
+          data: interData ?? {},
+        } as IntermediateStatusMessage<any>),
+        {
+          onTimeout: async () => {
+            await interTxnManager.timeout(intModifier)
+          },
+        },
+      )
+      if (earlyInterAck) {
+        sendInterStatus.stopRetry()
+      }
+      return await interSendPromise
+    }
   }
 
   numberOfSenders(): number {

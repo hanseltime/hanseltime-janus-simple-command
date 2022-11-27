@@ -47,8 +47,23 @@ describe('Sender', () => {
     ).rejects.toThrow('Sender did not make a call within 100ms.  Cannot send again')
     expect(mockSendFcn).not.toHaveBeenCalled()
   })
-  it('does sends the correct payload on close', async () => {
+  it('does send the correct payload on close', async () => {
     const sender = new Sender<Commands, CommandMap, StatusMap>('senderId', mockSendFcn, 200, { somefield: 'f' })
+    await sender.close()
+    expect(mockSendFcn).toHaveBeenCalledWith('senderClose', { auth: { somefield: 'f' } }, 'senderId')
+  })
+  it('does pass through an onIntermediateStatus handler', async () => {
+    const mockIntermediateFcn = jest.fn()
+    const sender = new Sender<Commands, CommandMap, StatusMap>('senderId', mockSendFcn, 200, { somefield: 'f' })
+    const ret = await sender.command(
+      'cmd1',
+      {
+        value: 'something',
+      },
+      mockIntermediateFcn,
+    )
+    expect(ret).toEqual(mockReturn)
+    expect(mockSendFcn).toHaveBeenCalledWith('cmd1', { value: 'something' }, 'senderId', mockIntermediateFcn)
     await sender.close()
     expect(mockSendFcn).toHaveBeenCalledWith('senderClose', { auth: { somefield: 'f' } }, 'senderId')
   })

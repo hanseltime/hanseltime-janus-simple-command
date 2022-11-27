@@ -1,6 +1,6 @@
 import { SenderTxnManager } from './SenderTxnManager'
 import { intGeneratorFactory } from '../idGenerators'
-import { FailStatusMessage, SuccessStatusMessage } from '../messagesTypes'
+import { FailStatusMessage, IntermediateStatusMessage, SuccessStatusMessage } from '../messagesTypes'
 
 jest.mock('../idGenerators')
 const mockIntGeneratorFactory = intGeneratorFactory as jest.Mock
@@ -187,6 +187,112 @@ describe('SenderTxnManager', () => {
       expect(onStatusMock).not.toHaveBeenCalled()
       expect(onAckMock).not.toHaveBeenCalled()
       expect(onNackMock).not.toHaveBeenCalled()
+    })
+    it('does not remove txn on intermediate calls for status', async () => {
+      const txnManager = new SenderTxnManager()
+
+      const onStatusMock = jest.fn()
+      const onAckMock = jest.fn()
+      const onNackMock = jest.fn()
+
+      const expTxn = idx
+      const txn = txnManager.create({
+        onAck: onAckMock,
+        onNack: onNackMock,
+        onStatus: onStatusMock,
+        onTimeout: jest.fn(),
+      })
+      expect(txn).toBe(`${expTxn}`)
+
+      const msgObj: IntermediateStatusMessage<any> = {
+        result: 'intermediate',
+        txn: txn,
+        for: 'senderId',
+        interModifier: 'huh',
+        data: {},
+      }
+      await txnManager.status(txn, msgObj)
+
+      expect(onStatusMock).toHaveBeenCalledWith(msgObj)
+      expect(onAckMock).not.toHaveBeenCalled()
+      expect(onNackMock).not.toHaveBeenCalled()
+      expect(txnManager.count()).toBe(1)
+
+      // Ensure it removes on success
+      const msgObj2: SuccessStatusMessage<any> = {
+        result: 'success',
+        txn: txn,
+        for: 'senderId',
+        data: {},
+      }
+      await txnManager.status(txn, msgObj2)
+
+      expect(onStatusMock).toHaveBeenCalledWith(msgObj2)
+      expect(onAckMock).not.toHaveBeenCalled()
+      expect(onNackMock).not.toHaveBeenCalled()
+      expect(txnManager.count()).toBe(0)
+    })
+    it('does not call onStatus for duplicate interModifiers on intermediate calls for status', async () => {
+      const txnManager = new SenderTxnManager()
+
+      const onStatusMock = jest.fn()
+      const onAckMock = jest.fn()
+      const onNackMock = jest.fn()
+
+      const expTxn = idx
+      const txn = txnManager.create({
+        onAck: onAckMock,
+        onNack: onNackMock,
+        onStatus: onStatusMock,
+        onTimeout: jest.fn(),
+      })
+      expect(txn).toBe(`${expTxn}`)
+
+      const msgObj: IntermediateStatusMessage<any> = {
+        result: 'intermediate',
+        txn: txn,
+        for: 'senderId',
+        interModifier: 'huh',
+        data: {},
+      }
+      const msgObj2: IntermediateStatusMessage<any> = {
+        result: 'intermediate',
+        txn: txn,
+        for: 'senderId',
+        interModifier: 'huh',
+        data: {},
+      }
+      const msgObj3: IntermediateStatusMessage<any> = {
+        result: 'intermediate',
+        txn: txn,
+        for: 'senderId',
+        interModifier: 'foo',
+        data: {},
+      }
+      await txnManager.status(txn, msgObj)
+      await txnManager.status(txn, msgObj2)
+      await txnManager.status(txn, msgObj3)
+
+      expect(onStatusMock).toHaveBeenCalledTimes(2)
+      expect(onStatusMock).toHaveBeenCalledWith(msgObj)
+      expect(onStatusMock).toHaveBeenCalledWith(msgObj3)
+      expect(onAckMock).not.toHaveBeenCalled()
+      expect(onNackMock).not.toHaveBeenCalled()
+      expect(txnManager.count()).toBe(1)
+
+      // Ensure it removes on success
+      const msgObj4: SuccessStatusMessage<any> = {
+        result: 'success',
+        txn: txn,
+        for: 'senderId',
+        data: {},
+      }
+      await txnManager.status(txn, msgObj4)
+
+      expect(onStatusMock).toHaveBeenCalledWith(msgObj4)
+      expect(onAckMock).not.toHaveBeenCalled()
+      expect(onNackMock).not.toHaveBeenCalled()
+      expect(txnManager.count()).toBe(0)
     })
   })
 })

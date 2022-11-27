@@ -1,6 +1,7 @@
 import {
   ACKMessage,
   CommandMessage,
+  IntermediateStatusMessage,
   NACKMessage,
   SenderCloseCommand,
   SenderCloseStatusMessage,
@@ -34,6 +35,11 @@ type StatusMap = {
   }>
   cmd2: StatusMessage<{
     huh: string
+  }>
+}
+type IntermediateStatusMap = {
+  cmd1: IntermediateStatusMessage<{
+    temp: number
   }>
 }
 
@@ -186,7 +192,7 @@ describe('Server', () => {
   })
   it('Maintains multiple Senders given timely activity', async () => {
     const connection = new MockConnection(2, 50)
-    const server = new Server<Commands, CommandMap, StatusMap>({
+    const server = new Server<Commands, CommandMap, StatusMap, IntermediateStatusMap>({
       ackRetryDelay: 100, // Milliseconds to wait to retry an non-ack'd send
       maxAckRetries: 2, // The number of retries we will do if we don't get an ACK
       connection,
@@ -250,7 +256,15 @@ describe('Server', () => {
     connection.sendMessage.mockClear()
     // Register a cmd Handler
     server.setMessageHandler('cmd1', {
-      handler: async (msg: CommandMap['cmd1']) => {
+      handler: async (msg: CommandMap['cmd1'], sendIntermediateStatus) => {
+        // Fire a sendIntermediateStatus
+        const v = await sendIntermediateStatus({
+          temp: 44,
+        })
+
+        // Ensure we indicate the intermediate status was sent
+        expect(v).toBe(true)
+
         return {
           isError: false,
           data: {
@@ -286,11 +300,22 @@ describe('Server', () => {
         product: 'ShamWOW',
       },
     }
-    expect(connection.sendMessage).toHaveBeenCalledTimes(3)
+    const expectedIntermediateStatus: IntermediateStatusMap['cmd1'] = {
+      for: 'sender2',
+      txn: '44',
+      result: 'intermediate',
+      interModifier: '1',
+      data: {
+        temp: 44,
+      },
+    }
+    expect(connection.sendMessage).toHaveBeenCalledTimes(5)
     expect(connection.sendMessage).toHaveBeenNthCalledWith(1, JSON.stringify(expectedAck3))
     // expect double send since we didn't get an ack back
-    expect(connection.sendMessage).toHaveBeenNthCalledWith(2, JSON.stringify(expectedStatus3))
-    expect(connection.sendMessage).toHaveBeenNthCalledWith(3, JSON.stringify(expectedStatus3))
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(2, JSON.stringify(expectedIntermediateStatus))
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(3, JSON.stringify(expectedIntermediateStatus))
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(4, JSON.stringify(expectedStatus3))
+    expect(connection.sendMessage).toHaveBeenNthCalledWith(5, JSON.stringify(expectedStatus3))
 
     // Verify 1 drops first (mock ack delays + time already past)
     await wait(200)

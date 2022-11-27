@@ -5,9 +5,12 @@ import {
   NACKMessage,
   SenderCreateStatusMessage,
   SenderCloseStatusMessage,
+  IntermediateStatusMessage,
 } from '../messagesTypes'
 import { Connection } from '../types'
 import { wait } from './utils'
+
+type ReturnStatuses = StatusMessage<any, any> | IntermediateStatusMessage<any>
 
 export class MockConnection implements Connection {
   private messageHandler: ((msg: string) => Promise<void>) | undefined
@@ -15,20 +18,18 @@ export class MockConnection implements Connection {
   private closeHandler: (() => Promise<void>) | undefined
 
   private inflightCalls = new Map<string, number>()
-  private commandHandlers = new Map<string, (cmd: CommandMessage<string, any>) => Promise<StatusMessage<any, any>>>()
+  private commandHandlers = new Map<
+    string,
+    | ((cmd: CommandMessage<string, any>) => Promise<ReturnStatuses>)
+    | ((cmd: CommandMessage<string, any>) => Promise<ReturnStatuses[]>)
+  >()
   private commandAckHandlers = new Map<
     string,
     (cmd: CommandMessage<string, any>) => Promise<ACKMessage | NACKMessage>
   >()
-  private statusAckHandler: (msg: StatusMessage<any, any>) => Promise<NACKMessage | ACKMessage> = async (
-    msg,
-  ): Promise<ACKMessage> => {
-    return {
-      for: msg.for,
-      txn: msg.txn,
-      ack: 'status',
-    }
-  }
+  private statusAckHandler: (
+    msg: StatusMessage<any, any> | IntermediateStatusMessage<any>,
+  ) => Promise<NACKMessage | ACKMessage> = baseAckFcn
 
   /**
    * mockResponse function that you can mockImplementation on
@@ -38,7 +39,7 @@ export class MockConnection implements Connection {
    * Note this is never called with ack messages as we short circuit those
    */
   readonly mockMessageResponse = jest
-    .fn<Promise<StatusMessage<any> | undefined>, [CommandMessage<string, any>]>()
+    .fn<Promise<ReturnStatuses | undefined | ReturnStatuses[]>, [CommandMessage<string, any>]>()
     .mockImplementation(async (command: CommandMessage<string, any>) => {
       const handler = this.commandHandlers.get(command.command)
       if (!handler) {
@@ -131,8 +132,16 @@ export class MockConnection implements Connection {
       // Simulate the response to a command
       await wait(this.waitResponseMs)
       const response = await this.mockMessageResponse(JSON.parse(msg))
-      if (response) {
-        await this.simulateIncomingMessage(JSON.stringify(response))
+
+      if (Array.isArray(response)) {
+        for (const resp of response as any[]) {
+          await this.simulateIncomingMessage(JSON.stringify(resp))
+          await wait(this.waitResponseMs)
+        }
+      } else {
+        if (response) {
+          await this.simulateIncomingMessage(JSON.stringify(response))
+        }
       }
     }
   })
@@ -162,7 +171,21 @@ export class MockConnection implements Connection {
     await this.closeHandler?.()
   }
 
-  handleCommand(command: string, handler: (cmd: CommandMessage<string, any>) => Promise<StatusMessage<any, any>>) {
+  /**
+   * Returns either a set of statuses for a command or a singular final status.
+   *
+   * When returning an array of statuses, the statuses are played forward with the
+   * MockConnection delay between each one.
+   *
+   * @param command - the command to apply this to
+   * @param handler - The handler function that returns the status(es)
+   */
+  handleCommand(
+    command: string,
+    handler:
+      | ((cmd: CommandMessage<string, any>) => Promise<ReturnStatuses>)
+      | ((cmd: CommandMessage<string, any>) => Promise<ReturnStatuses[]>),
+  ) {
     this.commandHandlers.set(command, handler)
   }
 
@@ -191,7 +214,19 @@ export class MockConnection implements Connection {
     })
   }
 
-  statusAck(handler: (msg: StatusMessage<any, any>) => Promise<NACKMessage | ACKMessage>): void {
+  statusAck(
+    handler: (msg: StatusMessage<any, any> | IntermediateStatusMessage<any>) => Promise<NACKMessage | ACKMessage>,
+  ): void {
     this.statusAckHandler = handler
+  }
+}
+
+async function baseAckFcn(msg: StatusMessage<any, any> | IntermediateStatusMessage<any>): Promise<ACKMessage> {
+  const cast = msg as IntermediateStatusMessage<any>
+  return {
+    for: msg.for,
+    txn: msg.txn,
+    ack: 'status',
+    ...(cast.interModifier ? { interModifier: cast.interModifier } : null),
   }
 }

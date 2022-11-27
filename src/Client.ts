@@ -10,6 +10,8 @@ import {
   CommandMap,
   StatusMap,
   AuthSchema,
+  IntermediateStatusMap,
+  IntermediateStatusMessage,
 } from './messagesTypes'
 import { BaseMsgSend, BaseMsgSendOptions, SendMessageReturn } from './BaseMsgSend'
 import { Sender } from './Sender'
@@ -23,6 +25,7 @@ export class Client<
   CMap extends CommandMap<Commands>,
   SMap extends StatusMap<Commands>,
   AuthMap extends AuthSchema<any, any> = AuthSchema<undefined, undefined>,
+  InterMap extends IntermediateStatusMap<Commands> = Record<string, never>,
 > extends BaseMsgSend {
   private txnStore = new SenderTxnManager()
 
@@ -66,9 +69,9 @@ export class Client<
    * close the sender before closing the client.  Please make a case for storing
    * sender references and closing them here
    */
-  async createSender(): Promise<Sender<Commands, CMap, SMap>>
-  async createSender(authPayload: AuthMap['submit']): Promise<Sender<Commands, CMap, SMap>>
-  async createSender(authPayload?: AuthMap['submit']): Promise<Sender<Commands, CMap, SMap>> {
+  async createSender(): Promise<Sender<Commands, CMap, SMap, InterMap>>
+  async createSender(authPayload: AuthMap['submit']): Promise<Sender<Commands, CMap, SMap, InterMap>>
+  async createSender(authPayload?: AuthMap['submit']): Promise<Sender<Commands, CMap, SMap, InterMap>> {
     const status = (await this.send('senderCreate' as any, authPayload)) as SenderCreateStatusMessage
     if (status.result === 'fail') {
       throw new Error(`Failed to create Sender: [${status.error.type}] ${status.error.message}`)
@@ -91,6 +94,7 @@ export class Client<
     command: C | 'senderCreate',
     payload: CMap[C]['data'] | SenderCreateCommand<any>['data'],
     senderId?: string,
+    onIntermediateStatus?: (status: InterMap[C]) => Promise<void>,
   ): Promise<SMap[C]> {
     if (!this.isConnected) {
       throw Error(`Cannot send command ${command}. Not connected to an active connection!`)
@@ -117,15 +121,30 @@ export class Client<
             earlyAck = true
             rej('NACK received')
           },
-          onStatus: (async (msg: SMap[C]) => {
+          onStatus: (async (msg: SMap[C] | InterMap[C]) => {
+            let ack: ACKMessage
+            // Handle intermediate statuses
+            if ((msg as unknown as IntermediateStatusMessage<any>).interModifier) {
+              const castMsg = msg as unknown as IntermediateStatusMessage<any>
+              ack = {
+                ack: 'status',
+                interModifier: castMsg.interModifier,
+                txn,
+                for: castMsg.for,
+              }
+              await this.sendMsgWithNoRetry(JSON.stringify(ack))
+              await onIntermediateStatus?.(msg as InterMap[C])
+              // Don't resove
+              return
+            }
             // send an ack
-            const ack: ACKMessage = {
+            ack = {
               ack: 'status',
               txn,
-              for: msg.for,
+              for: (msg as SMap[C]).for,
             }
             await this.sendMsgWithNoRetry(JSON.stringify(ack))
-            res(msg)
+            res(msg as SMap[C])
           }) as any, // TODO: solve actual type alignment
           onTimeout: async () => {
             rej(`Failed to secure response in time for ${command}`)

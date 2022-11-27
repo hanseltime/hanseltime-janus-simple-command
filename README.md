@@ -8,7 +8,7 @@ and provides a means of multi-plexing multiple "senders" on the same connection.
 
 # Usage
 
-Please see (below) for an in depth explanation of the protocol as it stands.
+Please see [Protocol](./PROTOCOL.md) for an in depth explanation of the protocol as it stands.
 
 In short, on a bidirectional connection either party can initiate a "sender" or a server.
 The server exists to simply respond to the requests of a sender. The sender talks with
@@ -18,7 +18,7 @@ From the standpoint of this library, you only need to worry yourself with comman
 and the corresponding status payloads that could come back.
 
 ```typescript
-import { CommandMap, CommandMessage, StatusMessage } from '@hanseltime/janus-simple-command'
+import { CommandMap, CommandMessage, StatusMessage, IntermediateStatusMap, StatusMap } from '@hanseltime/janus-simple-command'
 // Strongly type your expected commands
 type Commands = 'fly' | 'eat'
 
@@ -45,11 +45,17 @@ type StatusMap: StatusMap<Commands> = {
   fly: StatusMessage<FlySuccess, FlyErrors>
   eat: StatusMessage<EatSuccess>
 }
+// Optional - you can define intermediate statuses for a command
+type InterMap: IntermediateStatusMap<Commands> = {
+  fly: IntermediateStatusMessage<{
+    phase: 'lift-off' | 'grounded'
+  }>
+}
 
 // Create your connection
 const connection: Connection = someConnectionFunction()
 
-const server = new Server<Commands, CommandMap, StatusMap>({
+const server = new Server<Commands, CommandMap, StatusMap, InterMap>({
   maxSenderInactivity: 10000, // the amount of time we allow between commands
   maxAckRetries: 4, // If we drop an ack, the amount of times we retry a status
   ackRetryDelay: 500, // The amount we wait before retrying on a dropped ack
@@ -57,7 +63,24 @@ const server = new Server<Commands, CommandMap, StatusMap>({
   debug: (msg) => console.log(msg),
 })
 
-server.addMessageHandler('fly', async (msg: CommandMap['fly']): Promise<HandlerReturn<StatusMap['fly']>> => {
+server.addMessageHandler('fly', async (msg: CommandMap['fly'], sendIntermediateStatus ): Promise<HandlerReturn<StatusMap['fly']>> => {
+  // Indicate that we're taking off while we do other stuff
+  const sent = await sendIntermediateStatus({
+    phase: 'lift-off'
+  })
+
+  // If we don't verify it was sent we don't want to keep flying
+  if (!sent) {
+    console.error('pilot did not acknowledge, canceling flight')
+    return {
+      isError: true,
+      data: {
+        type: 'failureToLaunch',
+        message: 'Pilot Failed to acknowledge',
+      },
+    }
+  }
+
   return {
     isError: false,
     data: {
