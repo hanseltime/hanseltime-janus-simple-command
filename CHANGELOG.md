@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/hanseltime/hanseltime-janus-simple-command/compare/v1.2.1...v1.3.0) (2022-11-27)
+
+
+### Features
+
+* add intermediate statusing ([f45b76e](https://github.com/hanseltime/hanseltime-janus-simple-command/commit/f45b76e721596bf11cc15eea9fb2166252389491))
+
 ## [1.2.1](https://github.com/hanseltime/hanseltime-janus-simple-command/compare/v1.2.0...v1.2.1) (2022-11-13)
 
 
