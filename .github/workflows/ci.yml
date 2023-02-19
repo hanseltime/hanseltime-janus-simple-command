@@ -1,0 +1,33 @@
+name: CI
+run-name: ${{ github.ref_name }} CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Enable yarn Berry
+        run: corepack enable
+      - name: Linting
+        run: yarn lint
+      - name: Build
+        run: yarn build
+      - name: Unit Tests
+        run: yarn unit-test
+      - name: Int Tests
+        run: yarn int-test
