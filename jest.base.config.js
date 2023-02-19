@@ -19,6 +19,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   reporters: ['default', ...additionalReporters],
+  roots: ['<rootDir>/src'],
   transform: {
     '\\.tsx?$': 'ts-jest',
     '\\.jsx?$': 'babel-jest',

@@ -1,0 +1,40 @@
+{
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "cacheableOperations": [
+          "build",
+          "unit-test",
+          "int-test"
+        ],
+        "cacheDirectory": "./.nx-cache"
+      }
+    }
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "build-and-push-image": {
+      "dependsOn": [
+        "^build",
+        "^unit-test",
+        "^int-test"
+      ]
+    },
+    "unit-test": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "int-test": {
+      "dependsOn": [
+        "^build"
+      ]
+    }
+  },
+  "defaultBase": "main"
+}

@@ -1,0 +1,65 @@
+{
+    "name": "@hanseltime/dev-npm-registry-tools",
+    "description": "Simple collection of scripts to allow for local cross repository development",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "bin": {
+        "local-publish": "dist/bin/local-publish.js",
+        "use-local-registry": "dist/bin/use-local-registry.js"
+    },
+    "files": [
+        "dist",
+        "src",
+        "template-files",
+        "LICENSE",
+        "README.md",
+        "CHANGELOG.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/hanseltime/hanseltime-janus-simple-command.git",
+        "directory": "packages/dev-npm-registry-tools"
+    },
+    "scripts": {
+        "unit-test": "jest --config=./jest.unit.config.js --passWithNoTests",
+        "int-test": "jest --config=./jest.int.config.js --passWithNoTests",
+        "build": "pnpify tsc",
+        "clean": "rimraf ./dist",
+        "publish-local": "ts-node src/bin/local-publish.ts --packageFolder .",
+        "use-local-registry": "ts-node src/bin/use-local-registry.ts"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.20.5",
+        "@babel/preset-env": "^7.20.2",
+        "@semantic-release/changelog": "^6.0.1",
+        "@semantic-release/git": "^10.0.1",
+        "@semantic-release/npm": "^9.0.1",
+        "@types/glob": "^8",
+        "@types/jest": "^29.2.2",
+        "@types/js-yaml": "^4",
+        "@types/node": "^18.11.15",
+        "@types/yargs": "^17",
+        "@yarnpkg/pnpify": "^4.0.0-rc.33",
+        "jest": "^29.2.2",
+        "jest-html-reporters": "^3.0.11",
+        "nx": "^15.3.3",
+        "rimraf": "^3.0.2",
+        "semantic-release": "^19.0.5",
+        "source-map-support": "^0.5.21",
+        "ts-jest": "^29.0.3",
+        "ts-loader": "^9.4.2",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.9.4",
+        "webpack": "^5.75.0",
+        "webpack-cli": "^5.0.1"
+    },
+    "packageManager": "yarn@3.3.0",
+    "dependencies": {
+        "glob": "^8.1.0",
+        "handlebars": "^4.7.7",
+        "js-yaml": "^4.1.0",
+        "types-package-json": "^1.0.2",
+        "yargs": "^17.6.2"
+    }
+}

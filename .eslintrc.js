@@ -6,7 +6,7 @@ module.exports = {
     node: true,
     es2018: true,
   },
-  ignorePatterns: ['dist/**/*'],
+  ignorePatterns: ['/**/dist/**/*'],
   rules: {
     // NOTE: if you're failing this check, you can run 'yarn lint --fix' and prettier rules will be applied
     'prettier/prettier': 'error',
@@ -36,7 +36,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.ts', '**/*.tsx'],
+      files: ['packages/**/*.ts', 'packages/**/*.tsx'],
       env: { browser: true, es6: true, node: true },
       extends: [
         'eslint:recommended',
@@ -48,10 +48,12 @@ module.exports = {
       parserOptions: {
         ecmaVersion: 2018,
         sourceType: 'module',
-        project: './tsconfig.json',
+        project: 'packages/*/tsconfig.json',
       },
       plugins: ['@typescript-eslint'],
       rules: {
+        'no-shadow': 'off',
+        '@typescript-eslint/no-shadow': 'error',
         'deprecation/deprecation': 'warn',
         '@typescript-eslint/no-inferrable-types': 0,
         '@typescript-eslint/ban-ts-comment': 0,
