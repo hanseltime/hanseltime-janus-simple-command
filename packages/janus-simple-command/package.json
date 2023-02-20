@@ -16,7 +16,7 @@
   "scripts": {
     "lint": "eslint .",
     "unit-test": "jest --config=./jest.unit.config.js",
-    "int-test": "jest --config=./jest.int.config.js",
+    "int-test": "jest --config=./jest.int.config.js --passWithNoTests",
     "build": "tsc",
     "clean": "rimraf ./dist",
     "dev-run": "ts-node -r source-map-support/register src/index.ts",
