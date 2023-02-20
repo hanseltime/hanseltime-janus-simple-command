@@ -1,0 +1,14 @@
+name: PR Checks
+run-name: ${{ github.ref_name }} PR Checks
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  call-ci-workflow:
+    uses: ./.github/workflows/ci.yml
+    with:
+      from: 'PR Checks'
+
+    
