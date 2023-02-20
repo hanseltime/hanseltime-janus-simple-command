@@ -1,3 +1,10 @@
+# @hanseltime/janus-simple-command [1.4.0](https://github.com/hanseltime/hanseltime-janus-simple-command/compare/@hanseltime/janus-simple-command@1.3.0...@hanseltime/janus-simple-command@1.4.0) (2023-02-20)
+
+
+### Features
+
+* new monorepo backed jsp second try ([6c259c6](https://github.com/hanseltime/hanseltime-janus-simple-command/commit/6c259c6025e503d050a9be97c3ffc87e28f056f7))
+
 # @hanseltime/janus-simple-command [1.1.0](https://github.com/hanseltime/hanseltime-janus-simple-command/compare/@hanseltime/janus-simple-command@1.0.0...@hanseltime/janus-simple-command@1.1.0) (2023-02-20)
 
 
