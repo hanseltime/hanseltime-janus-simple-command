@@ -2,8 +2,7 @@ import { join, resolve } from 'path'
 import glob from 'glob'
 import { readFileSync } from 'fs'
 import { getPackageJson } from './getPackageJson'
-import { Body } from 'types-package-json
-'
+import { Body } from 'types-package-json'
 
 export interface WorkSpaceInfo {
   // Absolute url to the workspace package.json

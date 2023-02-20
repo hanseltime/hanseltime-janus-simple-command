@@ -6,7 +6,12 @@ module.exports = {
     node: true,
     es2018: true,
   },
-  ignorePatterns: ['/**/dist/**/*'],
+  ignorePatterns: [
+    '/**/dist/**/*',
+    '/**/bundles/**/*',
+    // Get rid of the base-library-repo for linting, it can be linted in actual package
+    'packages/monorepo-tools/base-library-repo/**',
+  ],
   rules: {
     // NOTE: if you're failing this check, you can run 'yarn lint --fix' and prettier rules will be applied
     'prettier/prettier': 'error',

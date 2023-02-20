@@ -2,8 +2,7 @@ import { rmSync } from 'fs'
 import { join, relative } from 'path'
 import { copySync } from 'fs-extra'
 import { newPackageWrapper, WrapperContext, WrapperOptions } from './newPackageWrapper'
-import { Respository } from 'types-package-json
-'
+import { Respository } from 'types-package-json'
 import { PkgTemplateContext, transformHandleBars } from './transformHandlebars'
 
 type TemplateContext = PkgTemplateContext

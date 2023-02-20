@@ -25,12 +25,10 @@
     "types": ["jest", "node"],
     "esModuleInterop": true,
   },
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
     "base-library-repo",
-    "base-db-models-repo",
-    "templates",
-    "base-dev-folder",
   ]
 }

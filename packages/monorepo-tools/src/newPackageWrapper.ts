@@ -1,13 +1,8 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { join, resolve, basename } from 'path'
 import { getPackageJson } from './getPackageJson'
-import { Body, Respository } from 'types-package-json
-'
+import { Body, Respository } from 'types-package-json'
 import { spawnSync } from 'child_process'
-import { trySyncTemplateDir } from './trySyncTemplateDir'
-import { devFolderTemplatePath } from './constants'
-import { ComposeTemplateContext } from './dockerCompose'
-import { ensureDirSync } from 'fs-extra'
 
 export interface WrapperOptions {
   // The root directory of the monorepo
@@ -94,21 +89,9 @@ export function newPackageWrapper<T extends WrapperOptions>(
         console.log('skipping updating root workspaces, already there')
       }
 
-      // Ensure we have added the dev folder and docker compose
-      if (!packageJson.scripts?.['docker-compose']) {
-        packageJson.scripts!['docker-compose'] = 'docker-compose -f ./dev/compose.yml'
-      }
-      const devFolder = resolve(rootDir, 'dev')
-      ensureDirSync(devFolder)
-      trySyncTemplateDir<ComposeTemplateContext>(devFolderTemplatePath, devFolder, {
-        toRoot: './..',
-        monorepoName: basename(rootDir),
-      })
-
       newPackageFcn(options, {
         workspaceUri,
         repository: packageJson.repository,
-        devComposePath: resolve(devFolder, 'compose.yml'),
         sameMonoRepo,
       })
 

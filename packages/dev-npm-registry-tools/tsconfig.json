@@ -25,6 +25,7 @@
     "types": ["jest", "node"],
     "esModuleInterop": true,
   },
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist"

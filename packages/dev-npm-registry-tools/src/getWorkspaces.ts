@@ -1,8 +1,7 @@
 import { join, resolve } from 'path'
 import glob from 'glob'
 import { readFileSync } from 'fs'
-import { Body } from 'types-package-json
-'
+import { Body } from 'types-package-json'
 
 // TODO: this is a slight copy past from monorepo-tools to avoid circular dependencies
 export interface WorkSpaceInfo {

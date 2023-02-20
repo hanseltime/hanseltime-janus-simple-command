@@ -3,8 +3,7 @@
  * we want to make sure that we don't commit private packages into a public package
  */
 import { readFileSync } from 'fs'
-import { Body } from 'types-package-json
-'
+import { Body } from 'types-package-json'
 import { getWorkspaces } from './getWorkspaces'
 
 export interface NoPublicPrivateDepsOptions {
