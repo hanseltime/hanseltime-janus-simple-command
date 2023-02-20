@@ -1,9 +1,9 @@
-name: CI
-run-name: ${{ github.ref_name }} CI
+name: Release
+run-name: ${{ github.ref_name }} Release
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, alpha ]
 
 jobs:
   call-ci-workflow:

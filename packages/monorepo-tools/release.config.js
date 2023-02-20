@@ -11,7 +11,7 @@ const scopeLimiterIdx = fullName.lastIndexOf('/')
 const abbreviatedName = fullName.substring(scopeLimiterIdx >= 0 ? scopeLimiterIdx + 1 : 0)
 
 module.exports = {
-  branches: ['main', { name: 'alpha', prerelease: true }],
+  branches: ['master', { name: 'alpha', prerelease: true }],
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
