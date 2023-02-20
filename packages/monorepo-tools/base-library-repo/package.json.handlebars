@@ -43,6 +43,11 @@
   "dependencies": {
     "source-map-support": "^0.5.21"
   },
+{{#if isPublished}} 
+  "publishConfig": {
+    "access": "public"
+  },
+{{/if}}
 {{#unless isPublished}}
   "private": true,
 {{/unless}}
