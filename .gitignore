@@ -2,3 +2,13 @@ dist
 node_modules
 yarn-error.log
 jest_html_reporters.html
+.DS_Store
+.nx-cache
+
+# Yarn 2
+.yarn/*
+!.yarn/cache/
+!.yarn/releases/
+!.yarn/plugins/
+!.yarn/versions/
+!.yarn/sdks/

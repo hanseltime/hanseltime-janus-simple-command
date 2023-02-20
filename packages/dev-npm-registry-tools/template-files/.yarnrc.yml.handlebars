@@ -1,0 +1,9 @@
+# Temporary File for local registry development
+# DO NOT COMMIT
+npmScopes:
+  ${scope}:
+    npmRegistryServer: {{serverHost}}
+    npmAuthIdent: "{{user}}:{{password}}"
+
+unsafeHttpWhitelist:
+  - "localhost"

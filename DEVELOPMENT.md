@@ -1,13 +1,138 @@
 # Developing
 
+## Tools
+
+## Tools
+
+- yarn v2
+  - Please run `yarn dev-init` after running `corepack enable` (on node 18)
+- node v18
+- For monorepo version release and publishing [multi-semantic-release](https://www.npmjs.com/package/@qiwi/multi-semantic-release)
+- For dependent package builds: [nx](https://nx.dev/getting-started/intro)
+
+## IDE support
+
+Since we are using Yarn Plug and Play in order to speed up package installation and running,
+some IDE support requires additional configuration. Below is the recommended IDE for developing 
+this repo:
+
+VSCode
+
+- Run `corepack enable`
+
+- You will need to [activate the custom TS settings](https://yarnpkg.com/getting-started/editor-sdks#vscode)
+
+- Restart your IDE
+
+Other IDEs:
+
+Your mileage may vary but you can look at setting up your IDE [here](https://yarnpkg.com/getting-started/editor-sdks)
+
 ## OS's
 
-Currently, given the use of bash and suggested use of things like nvm, we recommend that you 
+Currenlty, given the use of bash and suggested use of things like nvm, we recommend that you
 develop for this project on a Unix machine.
 
 ## Package manager
 
-This repository expects (yarn 1)[https://classic.yarnpkg.com/en/] as it's package management tool.
+This repository expects (yarn 2)[https://yarnpkg.com/] as it's package management tool.
+
+Since you most likely have yarn 1, please run:
+
+```sh
+corepack enable
+yarn dev-init
+```
+
+This will check if corepack is enabled to auto-select the correct yarn version for you.
+
+### yarn CLI scripts
+
+#### About
+
+This repository is a monorepo repository so that you can group functionality into smaller library folders. These
+folders allow us to isolate testing, dependencies, and even cache builds, tests, etc.
+
+In order to facillitate the monorepo structure, we make use of [nx](https://nx.dev/) on top of [yarn workspaces](https://yarnpkg.com/features/workspaces). Most of these tools are abstracted away by repo-level scripts, so you will only need to understand those cli tools if you don't have a need for advanced command calls.
+
+##### one vs all commands
+
+In order to make terminal calls from the root more intuitive, there is the concept of "-one" commands.
+
+**The Rule**
+
+If it ends with "-one", then you need to provide the "P" environment variable to name the package you're targeting.
+
+If it does not end with "-one", then the command should run in all repos it can be found ine
+
+#### Commands
+
+##### add-one
+
+This command basically allows you to add a dependency to the package that you provided as P=<>.
+
+**NOTE**: you can also use internal packages in the monorepo when adding this
+
+```
+P=janus-simple-command yarn add-one --dev some-package
+```
+
+**IMPORTANT**- If you have made a public package (one that will publish to a registry), then you **cannot**
+make it depend on private packages in your monorepo. This is because your package itself will need to list
+all dependencies that can be pulled from a registry and your internal private packages cannot.
+
+###### If you need to use a private repo in a public repo
+
+You should either be making the private package public as well, or you should be splitting out the private
+package into a smaller public package and private package. Make sure whatever is public is good as a package
+on its own (no db models etc.)
+
+##### build(-one)
+
+This runs typescript build on ALL projects in order of dependencies. Note, you need to build packages again in order
+for the project that you're working on to get the updated types and functionality
+
+##### dev-init
+
+This is a one-time command that sets up `corepack` so that node will automatically use the correct version of yarn
+
+##### lint
+
+Lints the whole project
+
+##### new-lib
+
+This will scaffold an entire new library for your project.
+
+```
+# Makes a private library
+yarn new-lib new-lib
+
+#Makes a publishable library to our local github packages
+yarn new-lib --publish new-public-lib
+```
+
+##### unit-test(-one)
+
+Run unit tests for the given projects. Note you can use all jest options.
+
+```sh
+yarn unit-test # Runs all commands
+```
+
+##### int-test(-one)
+
+Run integration tests for the given projects. Note you can use all jest options.
+
+```sh
+yarn int-test # Runs all commands
+```
+
+##### release
+
+This will run release in every package and updated changes logs and create tags
+
+**IMPORTANT** - this only should run from the ci/cd pipelines
 
 ## Minimum Node Development Version
 
@@ -18,18 +143,11 @@ It is highly recommended that you manage node versions using (nvm)[https://githu
 
 ## Development Branching strategy
 
-This repo follows a git-flow style of feature development.  With wemantic-release as our release tool,
+This repo follows a main and alpha trunk style of feature development. With semantic-release as our release tool,
 we can take advantage of 3 main branches:
 
-* main - source of truth for prod
-* develop - aggregate location where final and locally tested features go to be aggregated
-* rc - This is synced with develop during release cycles and represents a release candidate
-
-Some of the nuances of git-flow that you should remember are:
-
-* If you are going into develop, pull from develop and merge to develop
-* If you are fixing a bug in the rc, pull from rc so you don't get new features from develop
-* If you are hot-fixing a bug in main, pull from main for the same reason
+- main - source of truth for package - create your branches off of this one
+- alpha - The alpha branch that contributors should merge to so that we can formally test the package first
 
 ## Commit Messages
 
@@ -75,53 +193,42 @@ integration tests and unit tests.
 For faster local running of scripts, we use ts-node due to it's 1 step process to running data.
 
 ```sh
-yarn dev-run <your file location in .ts>
-```
-
-### For Production
-
-In production, there is an efficiency case to be made for compiling to the dist/ folder with .js files.
-This will containerize much better as well. In this instance, we provide a command for running any
-node scripts with just node.
-
-```sh
-yarn build # build the typescript
-yarn prod-run <your file location in .ts>
+yarn ts-node <your file location in .ts>
 ```
 
 # Locally developing this repository AND another local library
 
 If you have the need to locally develop and test one library that is imported into another,
-you can make use of the (development verdaccio)[https://github.com/hanseltime/development-verdaccio].
+you can make use of the (verdaccio-develop-registry)[https://github.com/hanseltime/development-verdaccio].
 
-By pulling this repo and running the server start command, you can then switch to a local npm registry.  You will need to update the config to handle @hanseltime scoped packages by only publishing them to the local registry.  It will also proxy all other packages from the npm registry.
+By pulling this repo and running the server start command, you can then switch to a local npm registry that
+will allow all @hanseltime/ scoped packages to be published to the local registry. It will also proxy all other packages from the npm registry.
 
 ## Commands for local registry
 
 ### set the local registry for all yarn installs/npm pulls
+
 ```sh
 yarn use-local-registry
 ```
 
-__IMPORTANT:__ You cannot commit your yarn.lock if you install packages through this.  It will reference the
-localhost registry. We have a commit hook that will stop you.  When you find it, please do:
+**IMPORTANT:** You cannot commit your yarn.lock if you install packages through this. It will reference the
+localhost registry. We have a commit hook that will stop you. When you find it, please:
 
-```sh
-# revert the yarn.lock file
-yarn use-normal-registry
-yarn
-```
+* revert your .yanrc.yml (adding back any things you may have installed that you meant to have there)
+
+* Reinstall from actual registries
+  ```sh
+  # revert the yarn.lock file
+  yarn
+  ```
 
 This will update the lock file for all regular registry packages.
 
 ### publish to the local registry after connecting to the local registry
+
 ```sh
 yarn publish-local
-```
-
-### Change back to the normal registry
-```sh
-yarn use-normal-registry
 ```
 
 ## Develop Tools
