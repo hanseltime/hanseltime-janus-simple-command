@@ -1,0 +1,33 @@
+name: CI
+run-name: ${{ github.ref_name }} CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  call-ci-workflow:
+    uses: ./.github/workflows/ci.yml
+    with:
+      from: 'PR Checks'
+  release:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Enable yarn Berry
+        run: corepack enable
+      - name: Install
+        run: yarn install --frozen-lockfile
+      - name: Release
+        run: yarn release --dry-run
+      - name: Post Release
+        run: yarn after-release
