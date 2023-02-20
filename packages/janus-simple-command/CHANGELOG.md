@@ -1,3 +1,18 @@
+# @hanseltime/janus-simple-command 1.0.0 (2023-02-20)
+
+
+### Bug Fixes
+
+* node version and build errors ([710f551](https://github.com/hanseltime/hanseltime-janus-simple-command/commit/710f551c3e0e1c8d951dec54392b0d5aeafb6132))
+
+
+
+
+
+### Dependencies
+
+* **@hanseltime/dev-npm-registry-tools:** upgraded to 1.0.0
+
 # [1.3.0](https://github.com/hanseltime/hanseltime-janus-simple-command/compare/v1.2.1...v1.3.0) (2022-11-27)
 
 
