@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from 'fs'
-import { join, resolve, basename } from 'path'
+import { join } from 'path'
 import { getPackageJson } from './getPackageJson'
 import { Body, Respository } from './packageJsonTypes'
 import { spawnSync } from 'child_process'
@@ -19,8 +19,6 @@ export interface WrapperContext {
   workspaceUri: string
   // The repository object (from package.json) of the root repository
   repository: string | Respository
-  // the location of the dev docker compose file
-  devComposePath: string
   // If we are expecting the package to be created in the same monorepo
   sameMonoRepo: boolean
 }

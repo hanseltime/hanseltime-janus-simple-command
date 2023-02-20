@@ -2008,6 +2008,7 @@ __metadata:
     "@semantic-release/git": ^10.0.1
     "@semantic-release/npm": ^9.0.1
     "@types/jest": ^29.2.2
+    "@types/node": ^16.0.0
     "@types/ws": ^8.5.3
     "@typescript-eslint/eslint-plugin": ^5.42.0
     "@typescript-eslint/parser": ^5.42.0
