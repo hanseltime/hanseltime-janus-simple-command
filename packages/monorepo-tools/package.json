@@ -1,6 +1,6 @@
 {
     "name": "@hanseltime/monorepo-tools",
-    "description": "Collection of monorepo scripts or tooling for this monorepo to  move faster",
+    "description": "Collection of monorepo scripts or tooling for this monorepo to move faster",
     "version": "1.0.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -77,5 +77,6 @@
         "handlebars": "^4.7.7",
         "js-yaml": "^4.1.0",
         "yargs": "^17.6.2"
-    }
+    },
+    "private": true
 }
