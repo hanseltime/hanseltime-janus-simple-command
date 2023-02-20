@@ -1952,7 +1952,6 @@ __metadata:
     ts-jest: ^29.0.3
     ts-loader: ^9.4.2
     ts-node: ^10.9.1
-    types-package-json: ^1.0.2
     typescript: ^4.9.4
     webpack: ^5.75.0
     webpack-cli: ^5.0.1
@@ -2072,7 +2071,6 @@ __metadata:
     ts-jest: ^29.0.3
     ts-loader: ^9.4.2
     ts-node: ^10.9.1
-    types-package-json: ^1.0.2
     typescript: ^4.9.4
     webpack: ^5.75.0
     webpack-cli: ^5.0.1
@@ -11353,13 +11351,6 @@ __metadata:
   version: 1.4.0
   resolution: "type-fest@npm:1.4.0"
   checksum: b011c3388665b097ae6a109a437a04d6f61d81b7357f74cbcb02246f2f5bd72b888ae33631b99871388122ba0a87f4ff1c94078e7119ff22c70e52c0ff828201
-  languageName: node
-  linkType: hard
-
-"types-package-json@npm:^1.0.2":
-  version: 2.0.39
-  resolution: "types-package-json@npm:2.0.39"
-  checksum: 5b575dbfad03a29e509cfdec0e8b32cceffd4a3416a47899541ae0658cb904a1c177930148899936f7e617ddf3cea757f09860b854dfa055a1185f15e1f43e48
   languageName: node
   linkType: hard
 

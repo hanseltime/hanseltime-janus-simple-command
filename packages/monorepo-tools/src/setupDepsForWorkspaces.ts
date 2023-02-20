@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { spawnSync } from 'child_process'
 import { readFileSync, writeFileSync } from 'fs'
-import { Body } from 'types-package-json'
+import { Body } from './packageJsonTypes'
 import { getWorkspaces } from './getWorkspaces'
 
 export interface SetupDependenciesOptions {

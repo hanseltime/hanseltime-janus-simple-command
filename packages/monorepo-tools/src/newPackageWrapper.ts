@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { join, resolve, basename } from 'path'
 import { getPackageJson } from './getPackageJson'
-import { Body, Respository } from 'types-package-json'
+import { Body, Respository } from './packageJsonTypes'
 import { spawnSync } from 'child_process'
 
 export interface WrapperOptions {
