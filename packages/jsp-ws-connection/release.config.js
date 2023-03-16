@@ -1,5 +1,3 @@
-// Given that certain jenkins plugins checkout origin/<branch>, we modify this here
-
 const { readFileSync } = require('fs')
 const { join } = require('path')
 
@@ -11,7 +9,7 @@ const scopeLimiterIdx = fullName.lastIndexOf('/')
 const abbreviatedName = fullName.substring(scopeLimiterIdx >= 0 ? scopeLimiterIdx + 1 : 0)
 
 module.exports = {
-  branches: ['main', { name: 'develop', prerelease: true }, { name: 'rc', prerelease: true }],
+  branches: ['master', { name: 'alpha', prerelease: true }],
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
