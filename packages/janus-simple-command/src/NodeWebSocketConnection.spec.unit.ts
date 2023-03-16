@@ -82,4 +82,27 @@ describe('NodeWebSocketConnection message tests', () => {
     await wait(1000)
     expect(console.log).toBeCalledWith('message does not apply to connection')
   })
+  it('message should add to queue and be 1', async () => {
+    const message = '{"ack": "ack"}'
+    connection.sendMessage(message)
+    client.onMessage(async ()=> {
+      await wait(1000)
+    })
+    await wait(100)
+    //@ts-ignore
+    expect(client.pending.size).toEqual(1)
+  })
+  it('messages added to queue and be 3', async () => {
+    await wait(2000)
+    const message = '{"ack": "ack"}'
+    connection.sendMessage(message)
+    connection.sendMessage(message)
+    connection.sendMessage(message)
+    client.onMessage(async ()=> {
+      await wait(200)
+    })
+    await wait(100)
+    //@ts-ignore
+    expect(client.pending.size).toEqual(3)
+  })
 })
