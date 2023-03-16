@@ -24,6 +24,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         "reference": "workspace:packages/janus-simple-command"\
       },\
       {\
+        "name": "@hanseltime/jsp-ws-connection",\
+        "reference": "workspace:packages/jsp-ws-connection"\
+      },\
+      {\
         "name": "@hanseltime/monorepo-tools",\
         "reference": "workspace:packages/monorepo-tools"\
       }\
@@ -34,6 +38,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
       ["@hanseltime/dev-npm-registry-tools", ["workspace:packages/dev-npm-registry-tools"]],\
       ["@hanseltime/janus-simple-command", ["workspace:packages/janus-simple-command"]],\
       ["@hanseltime/janus-simple-command-monorepo", ["workspace:."]],\
+      ["@hanseltime/jsp-ws-connection", ["workspace:packages/jsp-ws-connection"]],\
       ["@hanseltime/monorepo-tools", ["workspace:packages/monorepo-tools"]]\
     ],\
     "fallbackPool": [\
@@ -4526,6 +4531,36 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "SOFT"\
         }]\
       ]],\
+      ["@hanseltime/jsp-ws-connection", [\
+        ["workspace:packages/jsp-ws-connection", {\
+          "packageLocation": "./packages/jsp-ws-connection/",\
+          "packageDependencies": [\
+            ["@hanseltime/jsp-ws-connection", "workspace:packages/jsp-ws-connection"],\
+            ["@babel/core", "npm:7.20.12"],\
+            ["@babel/preset-env", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:7.20.2"],\
+            ["@hanseltime/dev-npm-registry-tools", "workspace:packages/dev-npm-registry-tools"],\
+            ["@hanseltime/janus-simple-command", "workspace:packages/janus-simple-command"],\
+            ["@semantic-release/changelog", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:6.0.1"],\
+            ["@semantic-release/git", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:10.0.1"],\
+            ["@semantic-release/npm", "virtual:93ff9e54e7e85ba03f8777529e2e31fd687b3208f0bfd29f9526626fccebedcf25fd704ae938492bcd5692d38a16927bd020804d445cde5885dc772e9e1e1ff9#npm:9.0.1"],\
+            ["@types/jest", "npm:29.4.0"],\
+            ["@types/node", "npm:18.14.0"],\
+            ["@types/ws", "npm:8.5.4"],\
+            ["@yarnpkg/pnpify", "npm:4.0.0-rc.39"],\
+            ["jest", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:29.4.3"],\
+            ["jest-html-reporters", "npm:3.0.11"],\
+            ["nx", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:15.7.2"],\
+            ["rimraf", "npm:3.0.2"],\
+            ["semantic-release", "npm:19.0.5"],\
+            ["source-map-support", "npm:0.5.21"],\
+            ["ts-jest", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:29.0.3"],\
+            ["ts-node", "virtual:81ea859e2612cdee90aac89507cb5552ca0d7c351d857d0624b3f56c5205bc308ffb18d06121fe5424372760899efacb718788f744ec3012bd3849b006f05111#npm:10.9.1"],\
+            ["typescript", "patch:typescript@npm%3A4.9.3#~builtin<compat/typescript>::version=4.9.3&hash=a66ed4"],\
+            ["ws", "virtual:34724aa21a2f676e3ca2bcecddd56e88209bd241a6a5e4a3942e4d5363544579057f1d3deb95837ea6f087641a38ccc45fe1e4173ad561d0d7cbddf0f61cad17#npm:8.13.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }]\
+      ]],\
       ["@hanseltime/monorepo-tools", [\
         ["workspace:packages/monorepo-tools", {\
           "packageLocation": "./packages/monorepo-tools/",\
@@ -6282,6 +6317,14 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-ws-npm-8.5.3-ae52c483f1-0ce46f850d.zip/node_modules/@types/ws/",\
           "packageDependencies": [\
             ["@types/ws", "npm:8.5.3"],\
+            ["@types/node", "npm:18.14.0"]\
+          ],\
+          "linkType": "HARD"\
+        }],\
+        ["npm:8.5.4", {\
+          "packageLocation": "./.yarn/cache/@types-ws-npm-8.5.4-c0237574ef-fefbad20d2.zip/node_modules/@types/ws/",\
+          "packageDependencies": [\
+            ["@types/ws", "npm:8.5.4"],\
             ["@types/node", "npm:18.14.0"]\
           ],\
           "linkType": "HARD"\
@@ -16388,6 +16431,30 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ws", "npm:8.12.1"]\
           ],\
           "linkType": "SOFT"\
+        }],\
+        ["npm:8.13.0", {\
+          "packageLocation": "./.yarn/cache/ws-npm-8.13.0-26ffa3016a-53e991bbf9.zip/node_modules/ws/",\
+          "packageDependencies": [\
+            ["ws", "npm:8.13.0"]\
+          ],\
+          "linkType": "SOFT"\
+        }],\
+        ["virtual:34724aa21a2f676e3ca2bcecddd56e88209bd241a6a5e4a3942e4d5363544579057f1d3deb95837ea6f087641a38ccc45fe1e4173ad561d0d7cbddf0f61cad17#npm:8.13.0", {\
+          "packageLocation": "./.yarn/__virtual__/ws-virtual-1cb08af1d0/0/cache/ws-npm-8.13.0-26ffa3016a-53e991bbf9.zip/node_modules/ws/",\
+          "packageDependencies": [\
+            ["ws", "virtual:34724aa21a2f676e3ca2bcecddd56e88209bd241a6a5e4a3942e4d5363544579057f1d3deb95837ea6f087641a38ccc45fe1e4173ad561d0d7cbddf0f61cad17#npm:8.13.0"],\
+            ["@types/bufferutil", null],\
+            ["@types/utf-8-validate", null],\
+            ["bufferutil", null],\
+            ["utf-8-validate", null]\
+          ],\
+          "packagePeers": [\
+            "@types/bufferutil",\
+            "@types/utf-8-validate",\
+            "bufferutil",\
+            "utf-8-validate"\
+          ],\
+          "linkType": "HARD"\
         }],\
         ["virtual:dc6d6dcf751702489ab0049f533227c5687c66055cdea7b36419c2bb45c4342ff311b62f3bda412f26cb8000faf0d90e7ce0f6b4f2fb3b622fa36387e54029a7#npm:8.12.1", {\
           "packageLocation": "./.yarn/__virtual__/ws-virtual-49a3e3a298/0/cache/ws-npm-8.12.1-d385ae1b1d-97301c1c4d.zip/node_modules/ws/",\

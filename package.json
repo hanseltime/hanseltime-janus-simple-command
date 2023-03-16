@@ -4,7 +4,8 @@
     "workspaces": [
         "packages/janus-simple-command",
         "packages/dev-npm-registry-tools",
-        "packages/monorepo-tools"
+        "packages/monorepo-tools",
+        "packages/jsp-ws-connection"
     ],
     "repository": "https://github.com/hanseltime/hanseltime-janus-simple-command",
     "scripts": {

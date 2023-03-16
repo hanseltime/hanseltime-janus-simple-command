@@ -1,8 +1,13 @@
 import { NodeWebSocketConnection } from './NodeWebSocketConnection'
 import { WebSocket, WebSocketServer, Server } from 'ws'
-import { wait } from './testing/utils'
-import { Client } from './Client'
-import { connect } from 'http2'
+
+export async function wait(time: number) {
+  await new Promise<void>((res) => {
+    setTimeout(() => {
+      res()
+    }, time)
+  })
+}
 
 const getServer = async (cb?: (connection: NodeWebSocketConnection) => Promise<void>) => {
   return new Promise<Server<WebSocket>>((res, rej) => {
@@ -85,7 +90,7 @@ describe('NodeWebSocketConnection message tests', () => {
   it('message should add to queue and be 1', async () => {
     const message = '{"ack": "ack"}'
     connection.sendMessage(message)
-    client.onMessage(async ()=> {
+    client.onMessage(async () => {
       await wait(1000)
     })
     await wait(100)
@@ -98,7 +103,7 @@ describe('NodeWebSocketConnection message tests', () => {
     connection.sendMessage(message)
     connection.sendMessage(message)
     connection.sendMessage(message)
-    client.onMessage(async ()=> {
+    client.onMessage(async () => {
       await wait(200)
     })
     await wait(100)

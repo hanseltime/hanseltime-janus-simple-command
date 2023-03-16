@@ -1,5 +1,10 @@
 import WebSocket from 'ws'
-import { Connection, messageIsForClient, messageIsForServer, tryToGetMessageObject } from './index'
+import {
+  Connection,
+  messageIsForClient,
+  messageIsForServer,
+  tryToGetMessageObject,
+} from '@hanseltime/janus-simple-command'
 
 export class NodeWebSocketConnection implements Connection {
   private messageHandler: ((msg: string) => Promise<void>) | undefined
@@ -34,8 +39,7 @@ export class NodeWebSocketConnection implements Connection {
       const msgObj = tryToGetMessageObject(msg)
       if (!msgObj) return
       const appliesToConnection =
-        (this.type === 'client' && messageIsForClient(msgObj)) ||
-        (this.type === 'server' && messageIsForServer(msgObj))
+        (this.type === 'client' && messageIsForClient(msgObj)) || (this.type === 'server' && messageIsForServer(msgObj))
       if (!appliesToConnection) {
         console.log('message does not apply to connection')
         return
