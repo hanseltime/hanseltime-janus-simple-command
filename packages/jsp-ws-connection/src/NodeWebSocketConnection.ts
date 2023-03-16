@@ -14,8 +14,7 @@ export class NodeWebSocketConnection implements Connection {
   private connect: Promise<void>
   private cancelConnect: ((error: Error) => void) | undefined
   private pending = new Set<Promise<any>>()
-
-  constructor(private ws: WebSocket, private type: 'server' | 'client') {
+  constructor(private ws: WebSocket, private type: 'server' | 'client', log: (...args: any) => void) {
     this.connect = new Promise<void>((res, reject) => {
       if (ws.readyState === WebSocket.CONNECTING) {
         this.cancelConnect = reject
@@ -32,7 +31,7 @@ export class NodeWebSocketConnection implements Connection {
     })
     ws.on('message', (data) => {
       if (!this.messageHandler) {
-        console.log('returning void onmessage')
+        log('returning void onmessage')
         return
       }
       const msg = data.toString()
@@ -41,7 +40,7 @@ export class NodeWebSocketConnection implements Connection {
       const appliesToConnection =
         (this.type === 'client' && messageIsForClient(msgObj)) || (this.type === 'server' && messageIsForServer(msgObj))
       if (!appliesToConnection) {
-        console.log('message does not apply to connection')
+        log('message does not apply to connection')
         return
       }
 

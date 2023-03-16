@@ -1,5 +1,10 @@
+/* eslint-disable no-console */
 import { NodeWebSocketConnection } from './NodeWebSocketConnection'
 import { WebSocket, WebSocketServer, Server } from 'ws'
+
+const log = jest.fn((...args) => {
+  console.info(...args)
+})
 
 export async function wait(time: number) {
   await new Promise<void>((res) => {
@@ -15,7 +20,7 @@ const getServer = async (cb?: (connection: NodeWebSocketConnection) => Promise<v
       port: 3000,
     })
     wss.on('connection', async (ws) => {
-      const connection = new NodeWebSocketConnection(ws, 'server')
+      const connection = new NodeWebSocketConnection(ws, 'server', log)
       if (cb) {
         await cb(connection)
       }
@@ -29,9 +34,6 @@ describe('NodeWebSocketConnection message tests', () => {
   let connection: NodeWebSocketConnection
   let client: NodeWebSocketConnection
 
-  console.log = jest.fn((...args) => {
-    console.info(...args)
-  })
   beforeAll(async () => {
     server = await getServer(async (c) => {
       connection = c
@@ -39,10 +41,10 @@ describe('NodeWebSocketConnection message tests', () => {
   })
   afterAll(async () => {
     server.close()
-    client.close()
+    await client.close()
   })
   it('init client', async () => {
-    client = new NodeWebSocketConnection(new WebSocket('ws://localhost:3000'), 'client')
+    client = new NodeWebSocketConnection(new WebSocket('ws://localhost:3000'), 'client', log)
     await client.open()
     //@ts-ignore
     expect(client.cancelConnect).toBe(undefined)
@@ -79,17 +81,17 @@ describe('NodeWebSocketConnection message tests', () => {
     const message = '{"ack": "status", "result": null}'
     await connection.sendMessage(message)
     await wait(1000)
-    expect(console.log).toBeCalledWith('message does not apply to connection')
+    expect(log).toBeCalledWith('message does not apply to connection')
   })
   it('message does not apply to server', async () => {
     const message = '{"ack": "not-status", "result": null}'
     await client.sendMessage(message)
     await wait(1000)
-    expect(console.log).toBeCalledWith('message does not apply to connection')
+    expect(log).toBeCalledWith('message does not apply to connection')
   })
   it('message should add to queue and be 1', async () => {
     const message = '{"ack": "ack"}'
-    connection.sendMessage(message)
+    void connection.sendMessage(message)
     client.onMessage(async () => {
       await wait(1000)
     })
@@ -100,9 +102,9 @@ describe('NodeWebSocketConnection message tests', () => {
   it('messages added to queue and be 3', async () => {
     await wait(2000)
     const message = '{"ack": "ack"}'
-    connection.sendMessage(message)
-    connection.sendMessage(message)
-    connection.sendMessage(message)
+    void connection.sendMessage(message)
+    void connection.sendMessage(message)
+    void connection.sendMessage(message)
     client.onMessage(async () => {
       await wait(200)
     })

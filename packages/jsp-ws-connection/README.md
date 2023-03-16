@@ -29,7 +29,7 @@ const wss = new WebSocketServer({
 let serv: Server<Commands, CommandMap, StatusMap> | undefined = undefined
 wss.on('connection', async (ws) => {
   debug('INFO', 'ws connected')
-  const connection = new NodeWebSocketConnection(ws, 'server')
+  const connection = new NodeWebSocketConnection(ws, 'server', console.log)
 
   serv = new Server<Commands, CommandMap, StatusMap>({
     maxSenderInactivity: 10000,
