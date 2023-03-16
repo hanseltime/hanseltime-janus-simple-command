@@ -39,9 +39,9 @@
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "ws": "^8.13.0",
     "@hanseltime/janus-simple-command": "workspace:^",
-    "source-map-support": "^0.5.21"
+    "source-map-support": "^0.5.21",
+    "ws": "^8.13.0"
   },
   "publishConfig": {
     "access": "public"
