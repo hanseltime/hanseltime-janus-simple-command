@@ -57,7 +57,6 @@ describe('NodeWebSocketConnection message tests', () => {
   it('sending empty ack message from connection', async () => {
     const message = '{"ack": "ack"}'
     await connection.sendMessage(message)
-
     await wait(100)
     client.onMessage(async (x) => {
       expect(x).toEqual(message)
@@ -66,16 +65,20 @@ describe('NodeWebSocketConnection message tests', () => {
   it('sending empty ack message from client', async () => {
     const message = '{"ack": "ack"}'
     await client.sendMessage(message)
+    await wait(100)
     connection.onMessage(async (x) => {
       expect(x).toEqual(message)
     })
-    await wait(1000)
   })
   it('message does not apply to client', async () => {
     const message = '{"ack": "status", "result": null}'
     await connection.sendMessage(message)
-    client.onMessage(async (x) => {
-    })
+    await wait(1000)
+    expect(console.log).toBeCalledWith('message does not apply to connection')
+  })
+  it('message does not apply to server', async () => {
+    const message = '{"ack": "not-status", "result": null}'
+    await client.sendMessage(message)
     await wait(1000)
     expect(console.log).toBeCalledWith('message does not apply to connection')
   })
