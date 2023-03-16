@@ -1,6 +1,7 @@
 # `jsp-ws-connection`
 
-This library is for specfic implementaions of the janus-simple-command package.
+This library is for specfic implementaions of the janus-simple-command 
+package's Connection interface that uses the `ws` websocket library.
 
 Currently supported
 
