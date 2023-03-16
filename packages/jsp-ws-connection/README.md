@@ -1,6 +1,6 @@
 # `jsp-ws-connection`
 
-This library is for specfic implementaions of the janus-simple-command package
+This library is for specfic implementaions of the janus-simple-command package.
 
 Currently supported
 
@@ -16,6 +16,7 @@ yarn add @hanseltime/janus-simple-command @hanseltime/jsp-ws-connection
 
 ```typescript
 import { NodeWebSocketConnection } from '@hanseltime/jsp-ws-connection'
+import { HandlerReturn, Server } from '@hanseltime/janus-simple-command'
 
 const app = express()
 
@@ -28,7 +29,7 @@ const wss = new WebSocketServer({
 let serv: Server<Commands, CommandMap, StatusMap> | undefined = undefined
 wss.on('connection', async (ws) => {
   debug('INFO', 'ws connected')
-  const connection = new WebSocketConnection(ws, 'server')
+  const connection = new NodeWebSocketConnection(ws, 'server')
 
   serv = new Server<Commands, CommandMap, StatusMap>({
     maxSenderInactivity: 10000,
@@ -39,7 +40,7 @@ wss.on('connection', async (ws) => {
   })
 
   serv.setMessageHandlerWithIntermediate('cmd', {
-    handler: async (msg, inter) => {
+    handler: async (msg, inter): Promise<HandlerReturn<StatusMap['cmd']>> => {
       runbot(msg)
     },
   })
@@ -47,3 +48,7 @@ wss.on('connection', async (ws) => {
   await serv.open()
 })
 ```
+
+See JSP Readme for more
+
+https://github.com/hanseltime/hanseltime-janus-simple-command/tree/master/packages/janus-simple-command#usage
