@@ -24,6 +24,7 @@ module.exports = {
     ],
     // This creates a release on github - you can decide if you want to mirror the files in package.json
     '@semantic-release/github',
+    // TODO: see other plugins https://semantic-release.gitbook.io/semantic-release/extending/plugins-list
   ],
-  ci: false,
+  ci: true,
 }
