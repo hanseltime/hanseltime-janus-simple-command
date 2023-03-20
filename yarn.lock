@@ -1925,7 +1925,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hanseltime/dev-npm-registry-tools@1.0.0, @hanseltime/dev-npm-registry-tools@^1.0.0, @hanseltime/dev-npm-registry-tools@workspace:^, @hanseltime/dev-npm-registry-tools@workspace:packages/dev-npm-registry-tools":
+"@hanseltime/dev-npm-registry-tools@1.0.0, @hanseltime/dev-npm-registry-tools@workspace:^, @hanseltime/dev-npm-registry-tools@workspace:packages/dev-npm-registry-tools":
   version: 0.0.0-use.local
   resolution: "@hanseltime/dev-npm-registry-tools@workspace:packages/dev-npm-registry-tools"
   dependencies:
@@ -1996,7 +1996,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@hanseltime/janus-simple-command@workspace:^, @hanseltime/janus-simple-command@workspace:packages/janus-simple-command":
+"@hanseltime/janus-simple-command@1.4.0, @hanseltime/janus-simple-command@workspace:packages/janus-simple-command":
   version: 0.0.0-use.local
   resolution: "@hanseltime/janus-simple-command@workspace:packages/janus-simple-command"
   dependencies:
@@ -2037,8 +2037,8 @@ __metadata:
   dependencies:
     "@babel/core": ^7.20.5
     "@babel/preset-env": ^7.20.2
-    "@hanseltime/dev-npm-registry-tools": ^1.0.0
-    "@hanseltime/janus-simple-command": "workspace:^"
+    "@hanseltime/dev-npm-registry-tools": 1.0.0
+    "@hanseltime/janus-simple-command": 1.4.0
     "@semantic-release/changelog": ^6.0.1
     "@semantic-release/git": ^10.0.1
     "@semantic-release/npm": ^9.0.1
